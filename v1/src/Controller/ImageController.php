@@ -330,6 +330,7 @@ namespace App\SchoolManager\Controller
             $imageRow = $mapper->retrieveImageByEcoleIdAndImageId(
                 ecoleid: $ecoleid, imageid: $imageid
             );
+
             if ($mapper->rowCount() === 0) {
                 return $response->json(
                     statusCode:500, success:false, 
@@ -345,6 +346,7 @@ namespace App\SchoolManager\Controller
                     ecoleid:  $imageRow['ecoleid']
                 );
                 $image->returnImageFile();
+
             } catch (ImageException $ex) {
                 return $response->json(
                     statusCode:500, success:false, 

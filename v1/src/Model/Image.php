@@ -39,7 +39,7 @@ namespace App\SchoolManager\Model
             ->setMimetype($mimetype)
             ->setEcoleid($ecoleid)
             ->setUploadFolderLocation(
-                join(DS, [$GLOBALS['IMAGES_APP_ROOT'], 'ecoles'])
+                join(DS, [APP_IMAGES_ROOT, 'ecoles'])
             );
         }
                 
@@ -167,7 +167,7 @@ namespace App\SchoolManager\Model
                 !is_numeric($ecoleid) || $ecoleid<= 0 
                 || $ecoleid > 9223372036854775807 
             )) {
-                throw new ImageException('Image Task ID error');
+                throw new ImageException('Image School ID error');
             }
             $this->ecoleid = $ecoleid;
             return $this;
@@ -262,18 +262,17 @@ namespace App\SchoolManager\Model
         {
             $filePath = $this->getUploadFolderLocation()
                 .DS.$this->getEcoleid().DS.$this->getFilename();
-            
+
             if (!file_exists($filePath)) {
                 throw new ImageException("Image File not found");
             }
             header('Content-Type: '.$this->getMimetype());
             header('Content-Disposition: inline; filename="'.$this->getFilename().'"');
-    
             if (!readfile($filePath)) {
                 http_response_code(404);
                 exit;
             }
-            exit;
+            exit; 
         }
     }
 }
