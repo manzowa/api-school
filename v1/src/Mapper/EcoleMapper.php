@@ -18,6 +18,7 @@ namespace App\SchoolManager\Mapper;
 use App\SchoolManager\Exception\EcoleException;
 use App\SchoolManager\Model\Adresse;
 use App\SchoolManager\Model\Ecole;
+use App\SchoolManager\Model\Image;
 use \Countable;
 use PDO;
 
@@ -38,18 +39,19 @@ class EcoleMapper extends Mapper implements Countable
             if (is_array($ecoles) && count($ecoles) > 0) {
                 foreach ($ecoles as $ecole) 
                 {
-                    $adresses = $this->retrieveEcoleAdressesArray($ecole['id']);
+                    $adresses = $this->retrieveEcoleAdressesArray(ecoleid: $ecole['id']);
+                    $images   = $this->retrieveEcoleAndImagesArray(ecoleid: $ecole['id']);
                     $ecoleObject = new Ecole(
                         id: $ecole['id'], nom: $ecole['nom'], 
                         email: $ecole['email'], telephone: $ecole['telephone'],
                         type: $ecole['type'], site: $ecole['site'], 
-                        maximage: $ecole['maximage'], adresses: $adresses 
+                        maximage: $ecole['maximage'], adresses: $adresses,
+                        images: $images
                     );
                     $ecolesArray[] = $ecoleObject->toArray();
                 }
                 $this->results = $ecolesArray;
             }
-           
         } catch (\PDOException $e) {
             $this->results = false;
             \App\SchoolManager\loggerException($e);
@@ -150,11 +152,13 @@ class EcoleMapper extends Mapper implements Countable
            
             if (is_array($ecole) && count($ecole) > 0) {
                 $adresses = $this->retrieveEcoleAdressesArray($ecole['id']);
+                $images = $this->retrieveEcoleAndImagesArray(ecoleid: $ecole['id']);
                 $ecoleObject = new Ecole(
                     id: $ecole['id'], nom: $ecole['nom'], 
                     email: $ecole['email'], telephone: $ecole['telephone'],
                     type: $ecole['type'], site: $ecole['site'], 
-                    maximage: $ecole['maximage'], adresses: $adresses 
+                    maximage: $ecole['maximage'], adresses: $adresses,
+                    images: $images
                 );
                 $this->results = $ecoleObject;
             }
@@ -536,5 +540,29 @@ class EcoleMapper extends Mapper implements Countable
             $this->results = false;
             \App\SchoolManager\loggerException($e);
         }
+    }
+    public function retrieveEcoleAndImagesArray(int $ecoleid): array 
+    {
+        $imagesRows = [];
+        try {
+            $command  = 'SELECT images.* FROM images ';
+            $command .= 'WHERE images.ecoleid = :ecoleid ';
+            $smt =  $this->db->prepare($command);
+            $smt->bindParam(':ecoleid', $ecoleid, PDO::PARAM_INT);
+            $smt->execute();
+    
+            while ($imagesRow = $smt->fetch(\PDO::FETCH_ASSOC)) {
+                $image = new Image(
+                    id: $imagesRow['id'], title: $imagesRow['title'],
+                    filename: $imagesRow['filename'], mimetype: $imagesRow['mimetype'],
+                    ecoleid :  $imagesRow['ecoleid']
+                );
+                $imagesRows[] = $image->toArray();
+            }
+        } catch (\PDOException $e) {
+            $this->results = false;
+            \App\SchoolManager\loggerException($e);
+        }
+        return $imagesRows;
     }
 }

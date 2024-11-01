@@ -36,7 +36,7 @@ namespace App\SchoolManager\Model
             ?int $id, ?string $nom, ?string $email = null, 
             ?string $telephone = null,  ?string $type = null, 
             ?string $site = null, ?int $maximage = null, 
-            array $adresses = [], 
+            array $adresses = [], array $images = []
         ) {
            $this
             ->setId($id)
@@ -46,7 +46,8 @@ namespace App\SchoolManager\Model
             ->setType($type)
             ->setSite($site)
             ->setMaximage($maximage)
-            ->setAdresses($adresses);
+            ->setAdresses($adresses)
+            ->setImages($images);
         }
 
         /**
@@ -269,6 +270,7 @@ namespace App\SchoolManager\Model
                 'site'      => $this->getSite(),
                 'maximage'  => $this->getMaximage(),
                 'adresses'  => $this->getAdresses(),
+                'images'    => $this->getImages()
             ];
         }
 

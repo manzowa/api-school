@@ -20,7 +20,7 @@ use Iterator;
 use \PDOStatement;
 use \TypeError;
 
-class Mapper 
+abstract class Mapper 
 {
     protected PDOStatement $stmt;
     protected string $command;
@@ -162,7 +162,6 @@ class Mapper
     public function getStockId(): ?int {
         return $this->stockId;
     }
-
     /**
      * Set the value of stockId
      *
@@ -174,7 +173,6 @@ class Mapper
         $this->stockId = $stockId;
         return $this;
     }
-
     /**
      * Get 
      */
@@ -184,7 +182,6 @@ class Mapper
     public function beginTransaction() {
         return $this->connexion()->beginTransaction();
     }
-
     public function inTransaction() {
         return $this->connexion()->inTransaction();
     }

@@ -20,7 +20,9 @@ namespace App\SchoolManager\Controller
     use App\SchoolManager\Exception\EcoleException;
     use App\SchoolManager\Model\Ecole;
     use App\SchoolManager\Attribute\Route;
+    use App\SchoolManager\Exception\ImageException;
     use App\SchoolManager\Model\Adresse;
+    use App\SchoolManager\Model\Image;
 
     #[Route(path:'/api/v1')]
     class EcoleController
@@ -42,7 +44,6 @@ namespace App\SchoolManager\Controller
         ) {
             // Establish the connection Database
             $connexionRead = Connexion::read();
-
             // Check the Connection Database
             if (!Connexion::is($connexionRead)){
                 return $response->json(
@@ -51,21 +52,29 @@ namespace App\SchoolManager\Controller
                 );
             }
             $mapper = new EcoleMapper($connexionRead);
-            $dataResults = $mapper->retrieveEcolesArray();
+                    
+            try {
+                $ecoleRows = $mapper->retrieveEcolesArray();
+                if (!$ecoleRows || $mapper->rowCount() === 0) {
+                    return $response->json(
+                        statusCode:500, success:false,
+                        message:'Failed to get Schools.'
+                    );
+                }
+                $returnData = [];
+                $returnData['rows_returned'] = $mapper->rowCount();
+                $returnData['schools'] = $ecoleRows;
 
-            if (!$dataResults || $mapper->rowCount() === 0) {
                 return $response->json(
-                    statusCode:500, success:false,
-                    message:'Failed to get Schools.'
+                    statusCode:200, success: true,
+                    toCache: true, data:  $returnData
+                );
+            } catch (EcoleException|ImageException $ex) {
+                return $response->json(
+                    statusCode:500, success:false, 
+                    message: $ex->getMessage()
                 );
             }
-            $returnData = [];
-            $returnData['rows_returned'] = $mapper->rowCount();
-            $returnData['schools'] = $dataResults;
-            return $response->json(
-                statusCode:200, success: true,
-                toCache: true, data:  $returnData
-            );
         }
         /**
          * Method postAction [POST]

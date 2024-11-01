@@ -203,7 +203,10 @@ namespace App\SchoolManager\Controller
                 );
                
             } catch (EcoleException $e) {
-                return $response->json(statusCode:400, success:false, message:$e->getMessage());
+                return $response->json(
+                    statusCode:400, success:false, 
+                    message:$e->getMessage()
+                );
             }
 
             $mapper = new EcoleMapper($connexionWrite);
