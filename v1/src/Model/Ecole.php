@@ -17,7 +17,7 @@ namespace App\SchoolManager\Model
 {
 
     use App\SchoolManager\Exception\EcoleException;
-    class Ecole
+    final class Ecole
     {
         protected readonly ?int $id;
         protected ?string $nom;

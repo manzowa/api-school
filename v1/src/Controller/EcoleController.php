@@ -76,6 +76,7 @@ namespace App\SchoolManager\Controller
                 );
             }
         }
+        
         /**
          * Method postAction [POST]
          * 

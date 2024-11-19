@@ -153,7 +153,6 @@ abstract class Mapper
         $this->stmt->closeCursor();
         return $this;
     }
-
     /**
      * Get the value of stockId
      *
@@ -191,5 +190,11 @@ abstract class Mapper
     public function commit() 
     {
         return $this->connexion()->commit();
+    }
+    public function executQuery(?array $params = null) {
+        if (is_array($params)) {
+            $this->stmt->execute($params);
+        }
+        return $this;
     }
 }   

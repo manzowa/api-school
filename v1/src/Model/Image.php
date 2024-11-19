@@ -17,7 +17,7 @@ namespace App\SchoolManager\Model
 {
     use App\SchoolManager\Exception\ImageException;
 
-    class Image
+    final class Image
     {
         protected readonly ?int $id;
         protected ?string $title;

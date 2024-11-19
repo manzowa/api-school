@@ -15,7 +15,6 @@
  */
 namespace App\SchoolManager\Mapper;
 
-use App\SchoolManager\Exception\EcoleException;
 use App\SchoolManager\Model\Adresse;
 use App\SchoolManager\Model\Ecole;
 use App\SchoolManager\Model\Image;
@@ -24,6 +23,8 @@ use PDO;
 
 class EcoleMapper extends Mapper implements Countable
 {
+    protected static $TABLE = "ecoles";
+
     public function __construct(\PDO $pdo){
         parent::__construct($pdo);
     }
@@ -57,9 +58,10 @@ class EcoleMapper extends Mapper implements Countable
             \App\SchoolManager\loggerException($e);
         }
         return $this->getResult();
+
     }
     public function addEcole(Ecole $ecole): self 
-    {
+    { 
         try {
             $command  = 'INSERT INTO ecoles (nom, email, telephone,type, site, maximage)  ';
             $command .= 'VALUES (:nom, :email, :telephone, :type, :site, :maximage) ';

@@ -18,7 +18,7 @@ namespace App\SchoolManager\Model
     use \Stringable;
     use App\SchoolManager\Exception\EcoleException;
 
-    class Adresse implements Stringable
+    final class Adresse implements Stringable
     {
         protected readonly ?int $id;
         protected ?string $voie;
