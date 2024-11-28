@@ -18,8 +18,9 @@ namespace App\SchoolManager\Controller
     use App\SchoolManager\Database\Connexion;
     use App\SchoolManager\Attribute\Route;
     use App\SchoolManager\Exception\EcoleException;
-    use App\SchoolManager\Mapper\ImageMapper;
+    use App\SchoolManager\Mapper\VendorMapper;
     use App\SchoolManager\Model\Image;
+    use App\SchoolManager\Model\Ecole;
     use \App\SchoolManager\Exception\ImageException;
 
     #[Route(path:'/api/v1')]
@@ -58,23 +59,36 @@ namespace App\SchoolManager\Controller
                    message:'School id cannot be blank or string. It\'s must be numeric'
                );
             }
-            $mapper = new ImageMapper($connexionRead);
-            $arrayImages = $mapper->retrieveImagesByEcoleIdArray(ecoleid: $ecoleid);
-            if ($mapper->rowCount() === 0) {
+           
+            try {
+                $mapper = new VendorMapper($connexionRead);
+                $rows = $mapper
+                    ->imageRetrieve(ecoleid: $ecoleid)
+                    ->executeQuery()
+                    ->getResults();
+    
+                if ($mapper->rowCount() === 0) {
+                    return $response->json(
+                        statusCode:500, success:false, 
+                        message:'Images Not Found.'
+                    );
+                }
+    
+                $returnData = [];
+                $returnData['rows_returned'] = $mapper->rowCount();
+                $returnData['images'] = $rows;
+    
                 return $response->json(
-                    statusCode:500, success:false, 
-                    message:'Images Not Found.'
+                    statusCode:200, success: true,
+                    toCache: true, data: $returnData
+                );
+
+            } catch (ImageException $e) {
+                return $response->json(
+                    statusCode:400, success:false, 
+                    message:$e->getMessage()
                 );
             }
-
-            $returnData = [];
-            $returnData['rows_returned'] = $mapper->rowCount();
-            $returnData['images'] = $arrayImages;
-
-            return $response->json(
-                statusCode:200, success: true,
-                toCache: true, data: $returnData
-            );
         }
         /**
          * Method postImagesAction [POST]
@@ -112,118 +126,138 @@ namespace App\SchoolManager\Controller
             }
             $ecoleid = $request->getParam('ecoleid');
             // Check Parameter School ID AND Address ID
-            if (is_null($ecoleid) || empty($ecoleid) || !is_numeric($ecoleid)) {
+            if (is_null($ecoleid) 
+                || empty($ecoleid) 
+                || !is_numeric($ecoleid)
+            ) {
                 return $response->json(
                     statusCode:400, success:false,
                     message:'School id cannot be blank or string. It\'s must be numeric'
                 );
             }
-            $mapper = new ImageMapper($connexionWrite);
-            $ecole = $mapper->retrieveEcole(ecoleid: $ecoleid);
 
-            if ($mapper->rowCount() === 0) {
-                return $response->json(
-                    statusCode:404, success:false, 
-                    message:'School Not Found.'
-                );
-            }
+            try 
+            {
 
-            if (!is_null($ecole->getMaximage()) 
-                && $ecole->isMaximunImage()
-            ) {
-                $msg = "You can't add this image, the maximum ";
-                $msg .= "number of images has been reached.";
-                return $response->json(
-                    statusCode:400, success:false, 
-                    message: $msg
-                );
-            }
-            
-            if (!$request->getParam('attributes')) {
-                return $response->json(
-                    statusCode:400, success:false, 
-                    message:'Attributes missing from body of request.'
-                );
-            }
+                $mapper = new VendorMapper($connexionWrite);
 
-            // Check Attribute Value if it's Json
-            if (!$jsonImagesAttributes = json_decode($request->getParam('attributes'))) {
-                return $response->json(
-                    statusCode:400, success:false,
-                    message:'Attribute field is not valid JSON.'
-                );
-            }
-            if (!isset($jsonImagesAttributes->title) || !isset($jsonImagesAttributes->filename)
-                || empty($jsonImagesAttributes->title) || empty($jsonImagesAttributes->filename)
-            ) {
-                return $response->json(
-                    statusCode:400, success:false,
-                    message:'Title and Filename fields are mandatory.'
-                );
-            }
+                $retrieveRow = $mapper
+                 ->ecoleRetrieve(id: $ecoleid)
+                 ->executeQuery()
+                 ->getResults();
 
-            if (strpos($jsonImagesAttributes->filename, '.') > 0) {
-                return $response->json(
-                    statusCode:400, success:false,
-                    message:'Filename must not contain a file extension.'
-                );
-            }
-            // Retrieve Object UploadedFile 
-            $oUFile = current($request->getUploadedFiles());
-            
-            if ((!is_object($oUFile)) || $oUFile->getError() !== 0 ) {
-                return $response->json(
-                    statusCode:500, success:false,
-                    message:'Image file upload unsuccessful - make sure you select a file.'
-                );
-            }
-            
-            // Check Size File
-            if (!is_null($oUFile->getSize()) 
-                && $oUFile->getSize() > 5242880
-            ) {
-                return $response->json(
-                    statusCode:400, success:false,
-                    message:'File must be under 5MB.'
-                );
-            }
-          
-            // Check MIME FILE
-            if(!$oUFile->isMime(mimes: ['image/jpeg', 'image/gif', 'image/png'])) {
-                return $response->json(
-                    statusCode:400, success:false,
-                    message:'File type not supported.'
-                );
-            }
-            // Check File Extension
-            if (is_null($oUFile->getImageFileExtension())) {
-                return $response->json(
-                    statusCode:400, success:false,
-                    message:'No valid file extension found for mimetype.'
-                );
-            }
+                if ($mapper->rowCount() === 0) {
+                    return $response->json(
+                        statusCode:404, success:false, 
+                        message:'School Not Found.'
+                    );
+                }
 
-            try {
+                $row = current($retrieveRow);
+                $ecole = Ecole::fromState($row);
+
+                if (!is_null($ecole->getMaximage()) 
+                    && $ecole->isMaximunImage()
+                ) {
+                    $msg = "You can't add this image, the maximum ";
+                    $msg .= "number of images has been reached.";
+                    return $response->json(
+                        statusCode:400, success:false, 
+                        message: $msg
+                    );
+                }
                 
+                if (!$request->getParam('attributes')) {
+                    return $response->json(
+                        statusCode:400, success:false, 
+                        message:'Attributes missing from body of request.'
+                    );
+                }
+
+                 // Check Attribute Value if it's Json
+                 if (!$jsonImagesAttributes = json_decode($request->getParam('attributes'))) {
+                    return $response->json(
+                        statusCode:400, success:false,
+                        message:'Attribute field is not valid JSON.'
+                    );
+                }
+                if (!isset($jsonImagesAttributes->title) 
+                    || !isset($jsonImagesAttributes->filename)
+                    || empty($jsonImagesAttributes->title) 
+                    || empty($jsonImagesAttributes->filename)
+                ) {
+                    return $response->json(
+                        statusCode:400, success:false,
+                        message:'Title and Filename fields are mandatory.'
+                    );
+                }
+
+                if (strpos($jsonImagesAttributes->filename, '.') > 0) {
+                    return $response->json(
+                        statusCode:400, success:false,
+                        message:'Filename must not contain a file extension.'
+                    );
+                }
+                // Retrieve Object UploadedFile 
+                $oUFile = current($request->getUploadedFiles());
+                
+                if ((!is_object($oUFile)) || $oUFile->getError() !== 0 ) {
+                    return $response->json(
+                        statusCode:500, success:false,
+                        message:'Image file upload unsuccessful - make sure you select a file.'
+                    );
+                }
+                
+                // Check Size File
+                if (!is_null($oUFile->getSize()) 
+                    && $oUFile->getSize() > 5242880
+                ) {
+                    return $response->json(
+                        statusCode:400, success:false,
+                        message:'File must be under 5MB.'
+                    );
+                }
+            
+                // Check MIME FILE
+                $typeMimes = ['image/jpeg', 'image/gif', 'image/png'];
+                if(!$oUFile->isMime(mimes: $typeMimes)) {
+                    return $response->json(
+                        statusCode:400, success:false,
+                        message:'File type not supported.'
+                    );
+                }
+                // Check File Extension
+                if (is_null($oUFile->getImageFileExtension())) {
+                    return $response->json(
+                        statusCode:400, success:false,
+                        message:'No valid file extension found for mimetype.'
+                    );
+                }
+
+
                 $image = new Image(
                     id: null, title: $jsonImagesAttributes->title, 
                     filename: $jsonImagesAttributes->filename.$oUFile->getImageFileExtension(),
                     mimetype:  $oUFile->getImageMime(),
                     ecoleid: $ecoleid
                 );
-                $mapper->retrieveImage($image);
+
+                $mapper
+                    ->imageRetrieve(image: $image)
+                    ->executeQuery();
+
                 if ($mapper->rowCount() !== 0) {
-                    if ($mapper->inTransaction()) {
-                        $mapper->rollBack();
-                    }
                     return $response->json(
                         statusCode:409, success:false, 
                         message:'A file with that filename already exists - try a different filename'
                     );
                 }
+
                 // Start Transaction
                 $mapper->beginTransaction();
-                $mapper->addImage(image: $image);
+                $mapper->imageAdd(image: $image)
+                    ->executInsert();
+
                 if ($mapper->rowCount() === 0) {
                     if ($mapper->inTransaction()) {
                         $mapper->rollBack();
@@ -239,20 +273,23 @@ namespace App\SchoolManager\Controller
                 $maxima = 1 + intval($ecole->getMaximage());
                 $ecole->setMaximage(maximage: $maxima);
 
-                $mapper->updateEcole(ecole: $ecole);
+                $mapper->ecoleUpdate(ecole: $ecole)
+                    ->executeUpdate();
+
                 if ($mapper->rowCount() === 0) {
-                    if ($mapper->inTransaction()) {
-                        $mapper->rollBack();
-                    }
                     return $response->json(
                         statusCode:500, success:false, 
                         message:'Failed to update info ecole'
                     );
                 }
 
-                $imageRow = $mapper->retrieveImageByEcoleIdAndImageId(
-                    ecoleid: $ecoleid, imageid: $lastImageID
-                );
+                $retrieveRow = $mapper
+                    ->imageRetrieve(id: $lastImageID, ecoleid: $ecoleid)
+                    ->executeQuery()
+                    ->getResults();
+
+                $row = current($retrieveRow);
+
                 if ($mapper->rowCount() === 0) {
                     if ($mapper->inTransaction()) {
                         $mapper->rollBack();
@@ -264,22 +301,23 @@ namespace App\SchoolManager\Controller
                 }
                
                 $newImage = new Image(
-                    id: $imageRow['id'], 
-                    title: $imageRow['title'],
-                    filename: $imageRow['filename'], 
-                    mimetype: $imageRow['mimetype'],
-                    ecoleid: $imageRow['ecoleid']
+                    id: $row['id'], 
+                    title: $row['title'],
+                    filename: $row['filename'], 
+                    mimetype: $row['mimetype'],
+                    ecoleid: $row['ecoleid']
                 );
                 
                 $newImage->saveImageFile($oUFile->getTmpName());
                 $mapper->commit();
+
                 return $response->json(
                     statusCode:200, success: true, 
                     message: 'Image upload successfully',
                     data:  $newImage->toArray()
                 );
-
-            } catch (ImageException|EcoleException $ex) {
+                
+            } catch (ImageException|EcoleException $ex ) {
                 if ($mapper->inTransaction()) {
                     $mapper->rollBack();
                 }
@@ -326,27 +364,30 @@ namespace App\SchoolManager\Controller
                     message: 'Image Id or School ID cannot be blank and must be numeric'
                 );
             }
-            $mapper = new ImageMapper($connexionRead);
-            $imageRow = $mapper->retrieveImageByEcoleIdAndImageId(
-                ecoleid: $ecoleid, imageid: $imageid
-            );
+           
+            try 
+            {
+                $mapper = new VendorMapper($connexionRead);
+                $resultsRows = $mapper
+                    ->imageRetrieve(id: $imageid, ecoleid: $ecoleid)
+                    ->executeQuery()
+                    ->getResults();
 
-            if ($mapper->rowCount() === 0) {
-                return $response->json(
-                    statusCode:500, success:false, 
-                    message:'Images Not Found.'
-                );
-            }
-            try {
+                if ($mapper->rowCount() === 0) {
+                    return $response->json(
+                        statusCode:500, success:false, 
+                        message:'Images Not Found.'
+                    );
+                }
+                $row = current($resultsRows);
                 $image = new Image(
-                    id: $imageRow['id'],
-                    title: $imageRow['title'],
-                    filename: $imageRow['filename'],
-                    mimetype: $imageRow['mimetype'],
-                    ecoleid:  $imageRow['ecoleid']
+                    id: $row['id'],
+                    title: $row['title'],
+                    filename: $row['filename'],
+                    mimetype: $row['mimetype'],
+                    ecoleid:  $row['ecoleid']
                 );
                 $image->returnImageFile();
-
             } catch (ImageException $ex) {
                 return $response->json(
                     statusCode:500, success:false, 
@@ -392,20 +433,33 @@ namespace App\SchoolManager\Controller
                     message: 'Image Id or Scholl ID cannot be blank and must be numeric'
                 );
             }
-            $mapper = new ImageMapper($connexionWrite);
-            $ecole = $mapper->retrieveEcole(ecoleid: $ecoleid);
-            if ($mapper->rowCount() === 0) {
-                return $response->json(
-                    statusCode:404, success:false, 
-                    message:'School with this image not Found.'
-                );
-            }
-            try {
+            try
+            {
+                $mapper = new VendorMapper($connexionWrite);
+                
+                $stateEcoleRow = $mapper
+                    ->ecoleRetrieve(id: $ecoleid)
+                    ->executeQuery()
+                    ->getResults();
+
+                if ($mapper->rowCount() === 0) {
+                    return $response->json(
+                        statusCode:404, success:false, 
+                        message:'School with this image not Found.'
+                    );
+                }
+                $row = current($stateEcoleRow);
+                $ecole = Ecole::fromState($row);
+           
                 // Start Transaction
                 $mapper->beginTransaction();
-                $imageRow = $mapper->retrieveImageByEcoleIdAndImageId(
-                    ecoleid: $ecoleid, imageid: $imageid
-                );
+
+                $retrieveRow = $mapper
+                    ->imageRetrieve(ecoleid: $ecoleid, id: $imageid)
+                    ->executeQuery()
+                    ->getResults();
+
+
                 if ($mapper->rowCount() === 0) {
                     if ($mapper->inTransaction()) {
                         $mapper->rollBack();
@@ -415,18 +469,19 @@ namespace App\SchoolManager\Controller
                         message:'Image Not Found'
                     );
                 }
+                $row = current($retrieveRow);
                 $image = new Image(
-                    id: $imageRow['id'], 
-                    title: $imageRow['title'],
-                    filename: $imageRow['filename'], 
-                    mimetype: $imageRow['mimetype'],
-                    ecoleid: $imageRow['ecoleid']
+                    id: $row['id'], 
+                    title: $row['title'],
+                    filename: $row['filename'], 
+                    mimetype: $row['mimetype'],
+                    ecoleid: $row['ecoleid']
                 );
 
-                $mapper->removeImageByIdAndEcoleId(
-                    id: $image->getId(),
-                    ecoleid: $image->getEcoleid()
-                );
+                $mapper
+                    ->imageRemove(id: $image->getId(), ecoleid: $ecoleid)
+                    ->executeDelete();
+
                 if ($mapper->rowCount() === 0) {
                     if ($mapper->inTransaction()) {
                         $mapper->rollBack();
@@ -441,17 +496,18 @@ namespace App\SchoolManager\Controller
                 $maxima = ($valMAx > 0)? $valMAx - 1 : $valMAx;
                 $ecole->setMaximage(maximage: $maxima);
 
-                $mapper->updateEcole(ecole: $ecole);
+                $mapper
+                    ->ecoleUpdate(ecole: $ecole)
+                    ->executeUpdate();
+                    
                 if ($mapper->rowCount() === 0) {
-                    if ($mapper->inTransaction()) {
-                        $mapper->rollBack();
-                    }
                     return $response->json(
                         statusCode:500, success:false, 
                         message:'Failed to update info ecole'
                     );
                 }
                 $image->deleteImageFile();
+
                 $mapper->commit();
 
                 return $response->json(
@@ -506,26 +562,41 @@ namespace App\SchoolManager\Controller
                     message: 'Image Id or School ID cannot be blank and must be numeric'
                 );
             }
-            $mapper = new ImageMapper($connexionRead);
-            $imageRow = $mapper->retrieveImageByEcoleIdAndImageId(
-                ecoleid: $ecoleid, imageid: $imageid
-            );
-            if ($mapper->rowCount() === 0) {
+           
+            try 
+            {
+                $mapper = new VendorMapper($connexionRead);
+
+                $imageRow = $mapper
+                    ->imageRetrieve(id: $imageid , ecoleid: $ecoleid)
+                    ->executeQuery()
+                    ->getResults();
+
+                if ($mapper->rowCount() === 0) {
+                    return $response->json(
+                        statusCode:500, success:false, 
+                        message:'Images Not Found.'
+                    );
+                }
+                $row = current($imageRow);
+                $returnData = [];
+                $stateImage = Image::fromState($row);
+                $returnData['attributes'] =  [
+                    "title" =>  $stateImage->getTitle(),
+                    "filename" => $stateImage->getFilename(),
+                    "mimetype" => $stateImage->getMimetype()
+                ];
+                return $response->json(
+                    statusCode:200, success:true, 
+                    data: $returnData
+                );
+               
+            } catch (ImageException $ex) {
                 return $response->json(
                     statusCode:500, success:false, 
-                    message:'Images Not Found.'
+                    message: $ex->getMessage()
                 );
             }
-            $returnData = [];
-            $returnData['attributes'] =  [
-                "title" => $imageRow["title"],
-                "filename" => $imageRow["filename"],
-                "mimetype" => $imageRow["mimetype"]
-            ];
-            return $response->json(
-                statusCode:200, success:true, 
-                data: $returnData
-            );
 
         }
         /**
@@ -587,27 +658,26 @@ namespace App\SchoolManager\Controller
                     message: "No fields to update are provided."
                 );
             }
-            $mapper = new ImageMapper($connexionWrite);
-            try {
-                // Start Transaction
-                $connexionWrite->beginTransaction();
 
-                $imageRow = $mapper->retrieveImageByEcoleIdAndImageId(
-                    ecoleid: $ecoleid, imageid: $imageid
-                );
+            try 
+            {
+                $mapper = new VendorMapper($connexionWrite);
+                // Start Transaction
+                $mapper->beginTransaction();
+
+                $imageRow = $mapper
+                    ->imageRetrieve(ecoleid: $ecoleid, id: $imageid)
+                    ->executeQuery()
+                    ->getResults();
+
                 if ($mapper->rowCount() === 0) {
                     return $response->json(
                         statusCode:500, success:false, 
                         message:'Images Not Found.'
                     );
                 }
-                $image = new Image(
-                    id: $imageRow['id'],
-                    title: $imageRow['title'],
-                    filename: $imageRow['filename'],
-                    mimetype: $imageRow['mimetype'],
-                    ecoleid:  $imageRow['ecoleid']
-                );
+                $row = current($imageRow);
+                $image = Image::fromState($row);
                 // Prepare Data to Update
                 // Title
                 (!is_null($body->title) ? $image->setTitle($body->title): false);
@@ -617,10 +687,13 @@ namespace App\SchoolManager\Controller
                     $image->setFilename($body->filename);
                 }
 
-                $mapper->updateImage(image: $image);
+                $mapper
+                    ->imageUpdate(image: $image)
+                    ->executeUpdate();
+                
                 if ($mapper->rowCount() === 0) {
-                    if ($connexionWrite->inTransaction()) {
-                        $connexionWrite->rollBack();
+                    if ($mapper->inTransaction()) {
+                        $mapper->rollBack();
                     }
                     $msg  = 'Image attributes not updated - ';
                     $msg .= 'the given values may be the same as  the stored values ';
@@ -629,22 +702,19 @@ namespace App\SchoolManager\Controller
                         message: $msg
                     );
                 }
-                $imageRow = $mapper->retrieveImageByEcoleIdAndImageId(
-                    ecoleid: $ecoleid, imageid: $imageid
-                );
+                $imageRow = $mapper
+                    ->imageRetrieve(ecoleid: $ecoleid, id: $imageid)
+                    ->executeQuery()
+                    ->getResults();
+
                 if ($mapper->rowCount() === 0) {
                     return $response->json(
                         statusCode:404, success:false, 
                         message:'No Images found after Update'
                     );
                 }
-                $image = new Image(
-                    id: $imageRow['id'],
-                    title: $imageRow['title'],
-                    filename: $imageRow['filename'],
-                    mimetype: $imageRow['mimetype'],
-                    ecoleid:  $imageRow['ecoleid']
-                );
+                $row = current($imageRow);
+                $image = Image::fromState($row);
 
                 if (isset($body->filename) && !is_null($body->filename)) {
                     $image->renameImageFile(
@@ -652,7 +722,8 @@ namespace App\SchoolManager\Controller
                         newFilename: $body->filename
                     );
                 }
-                $connexionWrite->commit();
+                $mapper->commit();
+
                 $returnData = [];
                 $returnData['image'] =  $image->toArray();
                 return $response->json(

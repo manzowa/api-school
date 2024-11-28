@@ -1,7 +1,7 @@
 <?php 
 
 /**
- * File Status
+ * File AdresseException
  * 
  * User: Christian SHUNGU <christianshungu@gmail.com>
  * Date: 11.08.2024
@@ -13,10 +13,10 @@
  * @license  See LICENSE file
  * @link     https://manzowa.com
  */
-namespace App\SchoolManager\Service
+namespace App\SchoolManager\Exception 
 {
-    enum Status: string {
-        case Y = 'Y';
-        case N = 'N';
+    use \Exception;
+
+    class AdresseException extends Exception {
     }
 }

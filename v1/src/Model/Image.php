@@ -180,8 +180,7 @@ namespace App\SchoolManager\Model
                 'title'     => $this->getTitle(),
                 'filename'  => $this->getFilename(),
                 'mimetype'  => $this->getMimetype(),
-                'ecoleid'   => $this->getEcoleid(),
-                'imageurl'  => '',
+                'ecoleid'   => $this->getEcoleid()
             ];
         }
 
@@ -273,6 +272,17 @@ namespace App\SchoolManager\Model
                 exit;
             }
             exit; 
+        }
+
+        public static function fromState(array $data = []) 
+        {
+            return new static (
+                id: $data['id']?? null,
+                title:  $data['title']?? null,
+                filename:  $data['filename']?? null,
+                mimetype:  $data['mimetype']?? null,
+                ecoleid: $data['ecoleid']?? null
+            );
         }
     }
 }

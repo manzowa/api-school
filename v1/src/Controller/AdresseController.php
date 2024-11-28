@@ -16,9 +16,9 @@
 namespace App\SchoolManager\Controller
 {
     use App\SchoolManager\Database\Connexion;
-    use App\SchoolManager\Mapper\EcoleMapper;
-    use App\SchoolManager\Exception\EcoleException;
+    use App\SchoolManager\Exception\AdresseException;
     use App\SchoolManager\Attribute\Route;
+    use App\SchoolManager\Mapper\VendorMapper;
     use App\SchoolManager\Model\Adresse;
 
     #[Route(path:'/api/v1')]
@@ -56,8 +56,11 @@ namespace App\SchoolManager\Controller
                 );
             }
 
-            $mapper = new EcoleMapper($connexionRead);
-            $arrayAdresses = $mapper->retrieveAdressesByEcoleIdArray(ecoleid: $ecoleid);
+            $mapper = new VendorMapper($connexionRead);
+            $rows = $mapper
+                ->adresseRetrieve(ecoleid: $ecoleid)
+                ->executeQuery()
+                ->getResults();
 
             if ($mapper->rowCount() === 0) {
                 return $response->json(
@@ -67,7 +70,7 @@ namespace App\SchoolManager\Controller
             }
             $returnData = [];
             $returnData['rows_returned'] = $mapper->rowCount();
-            $returnData['adressses'] = $arrayAdresses;
+            $returnData['adressses'] = $rows;
 
             return $response->json(
                 statusCode:200, success: true,
@@ -116,7 +119,6 @@ namespace App\SchoolManager\Controller
             }
 
             $ecoleid = $request->getParam('ecoleid');
-
             // Check Parameter School ID AND Address ID
             if (is_null($ecoleid) || empty($ecoleid) || !is_numeric($ecoleid)) {
                 return $response->json(
@@ -166,9 +168,9 @@ namespace App\SchoolManager\Controller
                 );
                 return $response->json(statusCode:400, success:false);
             }
-   
             // Prepare Data
             try {
+
                 $voie = (
                     isset($body->voie) 
                     && (!is_null($body->voie) && !empty($body->voie))
@@ -197,52 +199,78 @@ namespace App\SchoolManager\Controller
                 ) ? $body->reference: NULL;
 
                 $adresse = new Adresse(
-                    id: NULL, voie: $voie, quartier: $quartier, 
-                    commune: $commune, district: $district, 
-                    ville: $ville, reference: $reference, ecoleid: $ecoleid
+                    id: NULL, voie: $voie, 
+                    quartier: $quartier, 
+                    commune: $commune, 
+                    district: $district, 
+                    ville: $ville, 
+                    reference: $reference, 
+                    ecoleid: $ecoleid
+                );
+
+                $mapper = new VendorMapper($connexionWrite);
+                // (adresse: $adresse
+                $mapper
+                    ->adresseRetrieve(adresse: $adresse)
+                    ->executeQuery();
+
+                if ($mapper->rowCount() !== 0) {    
+                    return $response->json(
+                        statusCode: 400, success:false, 
+                        message:' Address already exists'
+                    );
+                }
+                // Start Transaction
+                $mapper->beginTransaction();
+
+                $mapper->adresseAdd(adresse: $adresse)
+                    ->executInsert();
+
+                if ($mapper->rowCount() === 0) {   
+                    if ($mapper->inTransaction()) {
+                        $mapper->rollBack();
+                    } 
+                    return $response->json(
+                        statusCode: 400, success:false, 
+                        message:'Failed to add address.'
+                    );
+                }
+                $adresseId = (int) $mapper->lastInsertId();
+
+                $row = $mapper
+                    ->adresseRetrieve(id: $adresseId)
+                    ->executeQuery()
+                    ->getResults();
+    
+                if ($mapper->rowCount() === 0) {   
+                    if ($mapper->inTransaction()) {
+                        $mapper->rollBack();
+                    }  
+                    return $response->json(
+                        statusCode: 400, success:false, 
+                        message:'Failed to retrieve address after to create.'
+                    );
+                }
+                $row = current($row);
+                $stateAdresse= Adresse::fromState(data: $row);
+
+                $returnData = [];
+                $returnData['rows_returned'] = $mapper->rowCount();
+                $returnData['adressses'] = $stateAdresse->toArray();
+
+                $mapper->commit();
+
+                return $response->json(
+                    statusCode:200, success: true,
+                    toCache: true, data: $returnData
                 );
                
-            } catch (EcoleException $e) {
+            } catch (AdresseException $e) {
                 return $response->json(
                     statusCode:400, success:false, 
                     message:$e->getMessage()
                 );
             }
-
-            $mapper = new EcoleMapper($connexionWrite);
-            $mapper->retrieveAdresse(adresse: $adresse);
-
-            if ($mapper->rowCount() !== 0) {    
-                return $response->json(
-                    statusCode: 400, success:false, 
-                    message:' Address already exists'
-                );
-            }
-            $mapper->addAdresse(adresse: $adresse);
-
-            if ($mapper->rowCount() !== 0) {    
-                return $response->json(
-                    statusCode: 400, success:false, 
-                    message:'Failed to add address.'
-                );
-            }
-            $adresseId = (int) $mapper->lastInsertId();
-            $adressFetched = $mapper->retrieveAdresseById($adresseId);
-
-            if ($mapper->rowCount() === 0) {    
-                return $response->json(
-                    statusCode: 400, success:false, 
-                    message:'Failed to retrieve address after to create.'
-                );
-            }
-            $returnData = [];
-            $returnData['rows_returned'] = $mapper->rowCount();
-            $returnData['adressses'] = $adressFetched->toArray();
-
-            return $response->json(
-                statusCode:200, success: true,
-                toCache: true, data: $returnData
-            );
         }
         /**
          * Method getOneAdresseAction [GET]
@@ -287,11 +315,13 @@ namespace App\SchoolManager\Controller
 
                 return $response->json(statusCode:400, success:false);
             }
-            $mapper = new EcoleMapper($connexionRead);
 
-            $adresseRetrieved = $mapper->retrieveAdresseByEcoleIdAndAdresseId(
-                ecoleid: $ecoleid, adresseid: $adresseid
-            );
+            $mapper = new VendorMapper($connexionRead);
+
+            $retrievedRow= $mapper
+                ->adresseRetrieve(id: $adresseid, ecoleid: $ecoleid)
+                ->executeQuery()
+                ->getResults();
 
             if ($mapper->rowCount() === 0) {
                 return $response->json(
@@ -301,7 +331,7 @@ namespace App\SchoolManager\Controller
             }
             $returnData = [];
             $returnData['rows_returned'] = $mapper->rowCount();
-            $returnData['adressses'] =$adresseRetrieved->toArray();
+            $returnData['adressses'] = $retrievedRow;
 
             return $response->json(
                 statusCode:200, success: true,
@@ -362,7 +392,7 @@ namespace App\SchoolManager\Controller
                 );
             }
 
-             // Check 
+            // Check 
             if (!isset($body->voie) || !isset($body->quartier)
                 || !isset($body->commune) || !isset($body->district)
                 || !isset($body->ville)
@@ -406,8 +436,9 @@ namespace App\SchoolManager\Controller
                 return $response->json(statusCode:400, success:false);
             }
 
-             // Prepare Data
-            try {
+            // Prepare Data
+            try 
+            {
                 $voie = (
                     isset($body->voie) 
                     && (!is_null($body->voie) && !empty($body->voie))
@@ -440,100 +471,132 @@ namespace App\SchoolManager\Controller
                     commune: $commune, district: $district, 
                     ville: $ville, reference: $reference, ecoleid: $ecoleid
                 );
-            } catch (EcoleException $e) {
-                return $response->json(statusCode:400, success:false, message:$e->getMessage());
-            }
+                //$mapper = new AdresseMapper($connexionWrite);
+                $mapper = new VendorMapper($connexionWrite);
 
-            $mapper = new EcoleMapper($connexionWrite);
-            $adresseRetrieved = $mapper->retrieveAdresseByEcoleIdAndAdresseId(
-                ecoleid: $ecoleid, adresseid: $adresseid
-            );
-
-            if ($mapper->rowCount() === 0) {
-                // Add New Adresse
-                $mapper->addAdresse(adresse: $adresse);
+                $retrievedRow = $mapper
+                    ->adresseRetrieve(id: $adresseid, ecoleid: $ecoleid)
+                    ->executeQuery()
+                    ->getResults();
+                
                 if ($mapper->rowCount() === 0) {
+                    // Add New Adresse
+                    $mapper->beginTransaction();
+                    $mapper
+                        ->adresseAdd(adresse: $adresse)
+                         ->executInsert();
+
+                    if ($mapper->rowCount() === 0) {
+                        if ($mapper->inTransaction()) {
+                            $mapper->rollBack();
+                        }
+                        return $response->json(
+                            statusCode:500, success:false, 
+                            message:'Failed to add new address.'
+                        );
+                    }
+                    $adresseLastID = (int) $mapper->lastInsertId();
+                    $retrievedNewRow = $mapper
+                        ->adresseRetrieve(id: $adresseLastID, ecoleid: $ecoleid)
+                        ->executeQuery()
+                        ->getResults();
+
+                    if ($mapper->rowCount() === 0) {
+                        if ($mapper->inTransaction()) {
+                            $mapper->rollBack();
+                        }
+                        return $response->json(
+                            statusCode:500, success:false, 
+                            message:'Failed to retrieve school after creation'
+                        );
+                    }
+                    $returnData = [];
+                    $returnData['rows_inserted'] = $mapper->rowCount();
+                    $returnData['adresse'] = $retrievedNewRow;
+                    $mapper->commit();
+
                     return $response->json(
-                        statusCode:500, success:false, 
-                        message:'Failed to add new address.'
+                        statusCode:201, success:true, 
+                        data: $returnData
                     );
                 }
-                $adresseLastID = (int) $mapper->lastInsertId();
 
-                $retrievedNewAadresse = $mapper->retrieveAdresseByEcoleIdAndAdresseId(
-                    ecoleid: $ecoleid, adresseid: $adresseLastID
+                $row = current($retrievedRow);
+                $adresseRetrieved = new Adresse(
+                    id: $row['id'], voie: $row['voie'],
+                    quartier: $row['quartier'], commune: $row['commune'],
+                    district: $row['district'], ville: $row['ville'],
+                    reference: $row['reference'], ecoleid: $row['ecoleid']
                 );
+
+                // Prepare Data to Update
+                // Voie
+                (
+                    !is_null($adresse->getVoie())
+                    ? $adresseRetrieved->setVoie($adresse->getVoie()): false
+                );
+                // 	quartier
+                (
+                    !is_null($adresse->getQuartier())
+                    ? $adresseRetrieved->setQuartier($adresse->getQuartier()): false
+                );
+                // reference
+                (
+                    !is_null($adresse->getReference())
+                    ? $adresseRetrieved->setReference($adresse->getReference()): false
+                );
+                // commune
+                (
+                    !is_null($adresse->getCommune())
+                    ? $adresseRetrieved->setCommune($adresse->getCommune()): false
+                );
+                // District
+                (
+                    !is_null($adresse->getDistrict())
+                    ? $adresseRetrieved->setDistrict($adresse->getDistrict()): false
+                );
+                // ville
+                (
+                    !is_null($adresse->getVille())
+                    ? $adresseRetrieved->setVille($adresse->getVille()): false
+                );
+                // Update Adresse
+                $mapper->adresseUpdate($adresseRetrieved)
+                    ->executeUpdate();
+
                 if ($mapper->rowCount() === 0) {
                     return $response->json(
-                        statusCode:500, success:false, 
-                        message:'Failed to retrieve school after creation'
+                        statusCode:404, success:false, 
+                        message:'Address not updated.'
                     );
                 }
+                // Fetch after Update
+                $stateAdresse = $mapper
+                    ->adresseRetrieve(id: $adresseid)
+                    ->executeQuery()
+                    ->getResults();
+
+                if ($mapper->rowCount() === 0) {
+                    return $response->json(
+                        statusCode:404, success:false, 
+                        message:'No Address found after update.'
+                    );
+                }
+
                 $returnData = [];
-                $returnData['rows_inserted'] = $mapper->rowCount();
-                $returnData['adresse'] = $retrievedNewAadresse->toArray();
+                $returnData['rows_returned'] = $mapper->rowCount();
+                $returnData['adressse'] = $stateAdresse;
+    
                 return $response->json(
-                    statusCode:201, success:true, 
-                    data: $returnData
+                    statusCode:200, success: true,
+                    toCache: true, data: $returnData
+                );
+            } catch (AdresseException $e) {
+                return $response->json(
+                    statusCode:400, success:false, 
+                    message:$e->getMessage()
                 );
             }
-
-            // Prepare Data to Update
-            // Voie
-            (
-                !is_null($adresse->getVoie())
-                ? $adresseRetrieved->setVoie($adresse->getVoie()): false
-            );
-            // 	quartier
-            (
-                !is_null($adresse->getQuartier())
-                ? $adresseRetrieved->setQuartier($adresse->getQuartier()): false
-            );
-            // reference
-            (
-                !is_null($adresse->getReference())
-                ? $adresseRetrieved->setReference($adresse->getReference()): false
-            );
-            // commune
-            (
-                !is_null($adresse->getCommune())
-                ? $adresseRetrieved->setCommune($adresse->getCommune()): false
-            );
-            // District
-            (
-                !is_null($adresse->getDistrict())
-                ? $adresseRetrieved->setDistrict($adresse->getDistrict()): false
-            );
-            // ville
-            (
-                !is_null($adresse->getVille())
-                ? $adresseRetrieved->setVille($adresse->getVille()): false
-            );
-            // Update Adresse
-            $mapper->updateAdresse($adresseRetrieved);
-            if ($mapper->rowCount() === 0) {
-                return $response->json(
-                    statusCode:404, success:false, 
-                    message:'Address not updated.'
-                );
-            }
-            // Fetch after Update
-            $adresseFetched = $mapper->retrieveAdresseById(id: $adresseid);
-            if ($mapper->rowCount() === 0) {
-                return $response->json(
-                    statusCode:404, success:false, 
-                    message:'No Address found after update.'
-                );
-            }
-
-            $returnData = [];
-            $returnData['rows_returned'] = $mapper->rowCount();
-            $returnData['adressse'] = $adresseFetched->toArray();
-
-            return $response->json(
-                statusCode:200, success: true,
-                toCache: true, data: $returnData
-            );
         }
         /**
          * Method patchOneAdresseAction [PATCH]
@@ -635,80 +698,101 @@ namespace App\SchoolManager\Controller
                     commune: $commune, district: $district, 
                     ville: $ville, reference: $reference, ecoleid: $ecoleid
                 );
-            } catch (EcoleException $e) {
-                return $response->json(statusCode:400, success:false, message:$e->getMessage());
-            }
 
-            $mapper = new EcoleMapper($connexionWrite);
-            $adresseRetrieved = $mapper->retrieveAdresseByEcoleIdAndAdresseId(
-                ecoleid: $ecoleid, adresseid: $adresseid
-            );
+                //$mapper = new AdresseMapper($connexionWrite);
+                $mapper = new VendorMapper($connexionWrite);
+                
 
-            if ($mapper->rowCount() === 0) {
-                // Add New Adresse
+                $retrievedRow = $mapper
+                    ->adresseRetrieve(id: $adresseid, ecoleid: $ecoleid)
+                    ->executeQuery()
+                    ->getResults();
+
+
+                if ($mapper->rowCount() === 0) {
+                    // Add New Adresse
+                    return $response->json(
+                        statusCode:404, success:true,
+                        message:'No Address found to update.'
+                    
+                    );
+                }
+                $row = current($retrievedRow);
+                $adresseRetrieved = new Adresse(
+                    id: $row['id'], voie: $row['voie'],
+                    quartier: $row['quartier'], commune: $row['commune'],
+                    district: $row['district'], ville: $row['ville'],
+                    reference: $row['reference'], ecoleid: $row['ecoleid']
+                );
+                // Prepare Data to Update
+                // Voie
+                (
+                    !is_null($adresse->getVoie())
+                    ? $adresseRetrieved->setVoie($adresse->getVoie()): false
+                );
+                // 	quartier
+                (
+                    !is_null($adresse->getQuartier())
+                    ? $adresseRetrieved->setQuartier($adresse->getQuartier()): false
+                );
+                // reference
+                (
+                    !is_null($adresse->getReference())
+                    ? $adresseRetrieved->setReference($adresse->getReference()): false
+                );
+                // commune
+                (
+                    !is_null($adresse->getCommune())
+                    ? $adresseRetrieved->setCommune($adresse->getCommune()): false
+                );
+                // District
+                (
+                    !is_null($adresse->getDistrict())
+                    ? $adresseRetrieved->setDistrict($adresse->getDistrict()): false
+                );
+                // ville
+                (
+                    !is_null($adresse->getVille())
+                    ? $adresseRetrieved->setVille($adresse->getVille()): false
+                );
+                // Update Adresse
+                $mapper
+                    ->adresseUpdate($adresseRetrieved)
+                    ->executeUpdate();
+
+                if ($mapper->rowCount() === 0) {
+                    return $response->json(
+                        statusCode:404, success:false, 
+                        message:'Address not updated.'
+                    );
+                }
+                // Fetch after Update
+                $stateAdresseRow = $mapper
+                    ->adresseRetrieve(id: $adresseid)
+                    ->executeQuery()
+                    ->getResults();
+
+                if ($mapper->rowCount() === 0) {
+                    return $response->json(
+                        statusCode:404, success:false, 
+                        message:'No Address found after update.'
+                    );
+                }
+
+                $returnData = [];
+                $returnData['rows_returned'] = $mapper->rowCount();
+                $returnData['adressse'] = $stateAdresseRow;
+
                 return $response->json(
-                    statusCode:404, success:true,
-                    message:'No Address found to update.'
-                   
+                    statusCode:200, success: true,
+                    toCache: true, data: $returnData
+                );
+            } catch (AdresseException $e) {
+                return $response->json(
+                    statusCode:400, success:false, 
+                    message:$e->getMessage()
                 );
             }
-            // Prepare Data to Update
-            // Voie
-            (
-                !is_null($adresse->getVoie())
-                ? $adresseRetrieved->setVoie($adresse->getVoie()): false
-            );
-            // 	quartier
-            (
-                !is_null($adresse->getQuartier())
-                ? $adresseRetrieved->setQuartier($adresse->getQuartier()): false
-            );
-            // reference
-            (
-                !is_null($adresse->getReference())
-                ? $adresseRetrieved->setReference($adresse->getReference()): false
-            );
-            // commune
-            (
-                !is_null($adresse->getCommune())
-                ? $adresseRetrieved->setCommune($adresse->getCommune()): false
-            );
-            // District
-            (
-                !is_null($adresse->getDistrict())
-                ? $adresseRetrieved->setDistrict($adresse->getDistrict()): false
-            );
-            // ville
-            (
-                !is_null($adresse->getVille())
-                ? $adresseRetrieved->setVille($adresse->getVille()): false
-            );
-            // Update Adresse
-            $mapper->updateAdresse($adresseRetrieved);
-
-            if ($mapper->rowCount() === 0) {
-                return $response->json(
-                    statusCode:404, success:false, 
-                    message:'Address not updated.'
-                );
-            }
-            // Fetch after Update
-            $adresseFetched = $mapper->retrieveAdresseById(id: $adresseid);
-            if ($mapper->rowCount() === 0) {
-                return $response->json(
-                    statusCode:404, success:false, 
-                    message:'No Address found after update.'
-                );
-            }
-
-            $returnData = [];
-            $returnData['rows_returned'] = $mapper->rowCount();
-            $returnData['adressse'] = $adresseFetched->toArray();
-
-            return $response->json(
-                statusCode:200, success: true,
-                toCache: true, data: $returnData
-            );
         }
         /**
          * Method deleteOneAdresseAction [DELETE]
@@ -755,12 +839,19 @@ namespace App\SchoolManager\Controller
                 ): false;
                 return $response->json(statusCode:400, success:false);
             }
-            $mapper = new EcoleMapper($connexionWrite);
-            $mapper->removeAdresseByIdAndEcoleId(
-                id: $adresseid, ecoleid: $ecoleid
-            );
+        
+            $mapper = new VendorMapper($connexionWrite);
+
+            // Start transaction
+            $mapper->beginTransaction();
+            $mapper
+                ->adresseRemove(id: $adresseid)
+                ->executeDelete();
 
             if ($mapper->rowCount() === 0) {
+                if ($mapper->inTransaction()) {
+                    $mapper->rollBack();
+                }
                 // Add New Adresse
                 return $response->json(
                     statusCode:404, success:true,
@@ -768,6 +859,7 @@ namespace App\SchoolManager\Controller
                    
                 );
             }
+            $mapper->commit();
             
             return $response->json(
                 statusCode:200, success: true,

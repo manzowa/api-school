@@ -30,40 +30,6 @@ abstract class Mapper
 
     public function __construct(protected ?\PDO $db) {}
     /**
-     * Method insert
-     * 
-     * @param ?string $table - 
-     * @param array $rows  - 
-     * 
-     * @return self
-     */
-    public function insert(?string $table, array $rows = []): self
-    {
-        if (!is_null($table) && count($rows)>0) {
-            $command = 'INSERT INTO '.$table;
-            $row = null;
-            $value = null;
-            foreach (array_keys($rows) as $key) {
-                $row .=",".$key;
-                $value .=", :".$key;
-            }
-            try {
-                $command .="(".substr($row, 1).") ";
-                $command .="VALUES (".substr($value, 1).")";
-                $this->prepare($command)->execute($rows);
-                $this->results = true;
-            } catch (\PDOException  $e) {
-                $this->results = false;
-                $msgError = sprintf("%s sur la ligne ( %s ) : %s", 
-                    $e->getFile(), $e->getLine(), $e->getMessage()
-                );
-                error_log($msgError, 0);
-                
-            }
-        }
-        return $this;
-    }
-    /**
      * Method rowCount
      * 
      * @return int;
@@ -88,11 +54,11 @@ abstract class Mapper
         return 0;
     }
     /**
-	 * Method getResult
+	 * Method getResults
 	 *
 	 * @return mixed
 	 */
-	public function getResult() {
+	public function getResults() {
 		return $this->results?? false;
 	}
     public function bindParam(
@@ -112,10 +78,6 @@ abstract class Mapper
     }
     public function prepare(string $queryString) {
         $this->stmt = $this->connexion()->prepare($queryString);
-        return $this;
-    }
-    public function execute(?array $params = null): self {
-        $this->stmt->execute($params);
         return $this;
     }
     public function fetch(
@@ -179,7 +141,8 @@ abstract class Mapper
         return $this->db; 
     }
     public function beginTransaction() {
-        return $this->connexion()->beginTransaction();
+        $this->connexion()->beginTransaction();
+        return $this;
     }
     public function inTransaction() {
         return $this->connexion()->inTransaction();
@@ -191,9 +154,128 @@ abstract class Mapper
     {
         return $this->connexion()->commit();
     }
-    public function executQuery(?array $params = null) {
-        if (is_array($params)) {
-            $this->stmt->execute($params);
+
+    /**
+     * Method create
+     * 
+     * @param ?string $table - 
+     * @param array $rows  - 
+     * 
+     * @return self
+     */
+    public function create(?string $table, array $rows = []): self
+    {
+        if (!is_null($table) && count($rows)>0) {
+            $command = 'INSERT INTO '.$table;
+            $row = null;
+            $value = null;
+            foreach (array_keys($rows) as $key) {
+                $row .=",".$key;
+                $value .=", :".$key;
+            }
+            $command .="(".substr($row, 1).") ";
+            $command .="VALUES (".substr($value, 1).")";
+            $this->prepare($command);
+        }
+        return $this;
+    }
+    /**
+     * Method select
+     * 
+     * @param ?string $table - 
+     * @param array $rows  - 
+     * 
+     * @return self
+     */
+    public function select(string $table, array $rows = []): self 
+    {
+        if (!is_null($table) && count($rows)>0) {
+            $command = 'SELECT '.trim(join($rows), ',').' FROM '.$table;
+            $this->prepare($command);
+        }
+        return $this;
+    }
+
+    /**
+     * Set the value of results
+     *
+     * @param mixed $results
+     *
+     * @return self
+     */
+    public function setResults(mixed $results): self {
+        $this->results = $results;
+        return $this;
+    }
+    public function execute(?array $params = null): self {
+        $this->stmt->execute($params);
+        return $this;
+    }
+    public function executeUpdate(?array $params = null): self {
+        try {
+            $this->execute($params)
+                ->setResults(true);
+        } catch (\PDOException $e) {
+            if ($this->inTransaction()) {
+                $this->rollBack();
+            }
+            $this->setResults(false);
+            \App\SchoolManager\loggerException($e);
+        }
+        return $this;
+    }
+    public function executeQuery(?array $params = null): self
+    {
+        try {
+            $this->execute($params);
+            $rows = [];
+            while($row = $this->fetch(\PDO::FETCH_ASSOC)->getResults()) {
+                $rows[] = $row;
+            }
+            $this->setResults($rows);
+            $this->closeCursor();
+        } catch (\PDOException $e) {
+            $this->setResults(false);
+            \App\SchoolManager\loggerException($e);
+        }
+        return $this;
+    }
+    public function executInsert(?array $params = null): self {
+        try {
+            $this->execute($params)
+                ->setResults(true);
+        } catch (\PDOException $e) {
+            if ($this->inTransaction()) {
+                $this->rollBack();
+            }
+            $this->setResults(false);
+            \App\SchoolManager\loggerException($e);
+        }
+        return $this;
+    }
+    public function executeDelete(?array $params = null): self {
+        try {
+            $this->execute($params)
+                ->setResults(true);
+        } catch (\PDOException $e) {
+            if ($this->inTransaction()) {
+                $this->rollBack();
+            }
+            $this->setResults(false);
+            \App\SchoolManager\loggerException($e);
+        }
+        return $this;
+    }
+    public function exec(string $queryString): self {
+        try {
+            $count = $this->connexion()->exec($queryString);
+            $this->setResults($count);
+        } catch (\PDOException $e) {
+            if ($this->inTransaction()) {
+                $this->rollBack();
+            }
+            \App\SchoolManager\loggerException($e);
+            $this->setResults(false);
         }
         return $this;
     }

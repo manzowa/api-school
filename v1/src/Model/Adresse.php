@@ -16,7 +16,7 @@
 namespace App\SchoolManager\Model
 {
     use \Stringable;
-    use App\SchoolManager\Exception\EcoleException;
+    use App\SchoolManager\Exception\AdresseException;
 
     final class Adresse implements Stringable
     {
@@ -64,7 +64,7 @@ namespace App\SchoolManager\Model
         public function setId(?int $id): self 
         {
             if (!is_null($id) && (!is_numeric($id) || $id <= 0 || $id > 9223372036854775807)) {
-                throw new EcoleException("Adresse ID error.");
+                throw new AdresseException("Adresse ID error.");
             }
             $this->id = $id;
             return $this;
@@ -82,7 +82,7 @@ namespace App\SchoolManager\Model
          */
         public function setVoie($voie): self {
             if (!is_null($voie) && (mb_strlen($voie) < 0 || mb_strlen($voie)>255)) {
-                throw new EcoleException("School way error.");
+                throw new AdresseException("School way error.");
             }
             $this->voie = $voie;
             return $this;
@@ -99,7 +99,7 @@ namespace App\SchoolManager\Model
         public function setQuartier($quartier): self 
         {
             if (!is_null($quartier) && (mb_strlen($quartier) < 0 || mb_strlen($quartier)>50 )) {
-                throw new EcoleException("School District error.");
+                throw new AdresseException("School District error.");
             }
             $this->quartier = $quartier;
             return $this;
@@ -121,7 +121,7 @@ namespace App\SchoolManager\Model
         public function setCommune(?string $commune): self 
         {
             if (!is_null($commune) && (mb_strlen($commune) < 0 || mb_strlen($commune)>50)) {
-                throw new EcoleException("Commune error");
+                throw new AdresseException("Commune error");
             }
             $this->commune = $commune;
             return $this;
@@ -142,7 +142,7 @@ namespace App\SchoolManager\Model
          */
         public function setDistrict(?string $district): self {
             if (!is_null($district) && (mb_strlen($district) < 0 || mb_strlen($district)>50 )) {
-                throw new EcoleException("District error.");
+                throw new AdresseException("District error.");
             }
             $this->district = $district;
             return $this;
@@ -171,7 +171,7 @@ namespace App\SchoolManager\Model
                     || mb_strtolower($ville) !== self::$villeDefaut 
                 )
             ) {
-                throw new EcoleException("Vill error.");
+                throw new AdresseException("Vill error.");
             }
             $this->ville = $ville;
             return $this;
@@ -204,7 +204,7 @@ namespace App\SchoolManager\Model
          */
         public function setReference(?string $reference): self {
             if (!is_null($reference) && (mb_strlen($reference) < 0 || mb_strlen($reference)>255 )) {
-                throw new EcoleException("School reference error.");
+                throw new AdresseException("School reference error.");
             }
             $this->reference = $reference;
             return $this;
@@ -221,7 +221,7 @@ namespace App\SchoolManager\Model
             if (!is_null($ecoleid) 
                 && (!is_numeric($ecoleid) || $ecoleid <= 0 || $ecoleid > 9223372036854775807)
             ) {
-                throw new EcoleException("School ID error.");
+                throw new AdresseException("School ID error.");
             }
             $this->ecoleid = $ecoleid;
             return $this;
@@ -252,6 +252,19 @@ namespace App\SchoolManager\Model
                 'reference' => $this->getReference(),
                 'ecoleid'   => $this->getEcoleid()
             ];
+        }
+
+        public static function fromState(array $data = []) {
+            return new static (
+                id: $data['id']?? null,
+                voie:  $data['voie']?? null,
+                quartier:  $data['quartier']?? null,
+                commune:  $data['commune']?? null,
+                district: $data['district']?? null,
+                ville: $data['ville']?? null,
+                reference: $data['reference']?? null,
+                ecoleid: $data['ecoleid']?? null
+            );
         }
     }
 }

@@ -21,5 +21,59 @@ namespace App\SchoolManager\Model
         protected ?string $fullname;
         protected ?string $username;
         protected ?string $password;
+        protected ?string $active;
+        protected ?int $attempts;
+
+        /**
+         * Get the value of id
+         */
+        public function getId() {
+            return $this->id;
+        }
+
+        /**
+         * Get the value of fullname
+         *
+         * @return ?string
+         */
+        public function getFullname(): ?string {
+            return $this->fullname;
+        }
+
+        /**
+         * Get the value of username
+         *
+         * @return ?string
+         */
+        public function getUsername(): ?string {
+            return $this->username;
+        }
+
+        /**
+         * Get the value of password
+         *
+         * @return ?string
+         */
+        public function getPassword(): ?string {
+            return $this->password;
+        }
+
+        /**
+         * Get the value of active
+         *
+         * @return ?string
+         */
+        public function getActive(): ?string {
+            return $this->active;
+        }
+
+        /**
+         * Get the value of attempts
+         *
+         * @return ?int
+         */
+        public function getAttempts(): ?int {
+            return $this->attempts;
+        }
     }
 }

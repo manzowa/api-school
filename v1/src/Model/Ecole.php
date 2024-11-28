@@ -292,5 +292,20 @@ namespace App\SchoolManager\Model
             ) && self::MAXIMA_IMAGE <= $this->getMaximage())? true : false;
             return $isBool;
         }
+
+        public static function fromState(array $data = []) 
+        {
+            return new static (
+                id: $data['id']?? null,
+                nom:  $data['nom']?? null,
+                email:  $data['email']?? null,
+                telephone:  $data['telephone']?? null,
+                type: $data['type']?? null,
+                site: $data['site']?? null,
+                maximage: $data['maximage']?? null,
+                adresses: $data['adresses']?? [],
+                images: $data['images']?? [],
+            );
+        }
     }
 }

@@ -23,8 +23,6 @@ use PDO;
 
 class EcoleMapper extends Mapper implements Countable
 {
-    protected static $TABLE = "ecoles";
-
     public function __construct(\PDO $pdo){
         parent::__construct($pdo);
     }
@@ -33,9 +31,12 @@ class EcoleMapper extends Mapper implements Countable
     {
         try {
             $ecolesArray = [];
-            $ecoles = $this->prepare('SELECT * FROM ecoles')
-                ->execute()->fetchAll(\PDO::FETCH_ASSOC)
-                ->closeCursor()->getResult();
+            $ecoles = $this
+                ->prepare('SELECT * FROM ecoles')
+                ->execute()
+                ->fetchAll(\PDO::FETCH_ASSOC)
+                ->closeCursor()
+                ->getResults();
 
             if (is_array($ecoles) && count($ecoles) > 0) {
                 foreach ($ecoles as $ecole) 
@@ -51,13 +52,13 @@ class EcoleMapper extends Mapper implements Countable
                     );
                     $ecolesArray[] = $ecoleObject->toArray();
                 }
-                $this->results = $ecolesArray;
+                $this->setResults($ecolesArray);
             }
         } catch (\PDOException $e) {
-            $this->results = false;
+            $this->setResults(false);
             \App\SchoolManager\loggerException($e);
         }
-        return $this->getResult();
+        return $this->getResults();
 
     }
     public function addEcole(Ecole $ecole): self 
@@ -86,7 +87,7 @@ class EcoleMapper extends Mapper implements Countable
                 $this->insertAdresses(adresses: $ecole->getAdresses(), ecoleid: $ecoleid);
             }
         } catch (\PDOException $e) {
-            $this->results = false;
+            $this->setResults(false);
             \App\SchoolManager\loggerException($e);
         }
         return $this;
@@ -97,9 +98,9 @@ class EcoleMapper extends Mapper implements Countable
             $this->prepare('DELETE FROM ecoles WHERE id = :id')
                 ->bindParam(':id', $id, \PDO::PARAM_INT)
                 ->execute();
-            $this->results = true;  
+                $this->setResults(true);
         } catch (\PDOException $e) {
-            $this->results = false;
+            $this->setResults(false);
             \App\SchoolManager\loggerException($e);
         }
         return $this;
@@ -139,10 +140,10 @@ class EcoleMapper extends Mapper implements Countable
                 ->fetchAll(\PDO::FETCH_FUNC, "\App\SchoolManager\Model\Ecole::build")
                 ->closeCursor();
         } catch (\PDOException $e) {
-            $this->results = false;
+            $this->setResults(false);
             \App\SchoolManager\loggerException($e);
         }
-        return is_array($this->getResult())? current($this->getResult()):$this->getResult();
+        return is_array($this->getResults())? current($this->getResults()):$this->getResults();
     }
     public function retrieveEcole(int $ecoleid) {
         try {
@@ -150,7 +151,7 @@ class EcoleMapper extends Mapper implements Countable
             $ecole = $this->prepare($command)
                 ->bindParam(':id', $ecoleid, \PDO::PARAM_INT)
                 ->execute()->fetch(\PDO::FETCH_ASSOC)
-                ->closeCursor()->getResult();
+                ->closeCursor()->getResults();
            
             if (is_array($ecole) && count($ecole) > 0) {
                 $adresses = $this->retrieveEcoleAdressesArray($ecole['id']);
@@ -169,7 +170,7 @@ class EcoleMapper extends Mapper implements Countable
             $this->results = false;
             \App\SchoolManager\loggerException($e);
         }
-        return $this->getResult();
+        return $this->getResults();
     }
     public function retrieveEcoleByName(string $nom) {
         try {
@@ -177,7 +178,7 @@ class EcoleMapper extends Mapper implements Countable
             $ecole = $this->prepare($command)
                 ->bindParam(':nom', $nom,  \PDO::PARAM_STR)
                 ->execute()->fetch(\PDO::FETCH_ASSOC)
-                ->closeCursor()->getResult();
+                ->closeCursor()->getResults();
            
             if (is_array($ecole) && count($ecole) > 0) {
                 $adresses = $this->retrieveEcoleAdressesArray($ecole['id']);
@@ -194,18 +195,20 @@ class EcoleMapper extends Mapper implements Countable
             $this->results = false;
             \App\SchoolManager\loggerException($e);
         }
-        return $this->getResult();
+        return $this->getResults();
     }
     public function count(): int 
     {
         try {
             $queryString = 'SELECT count(id) FROM ecoles';
             $this->query(queryString: $queryString)
-                ->execute()->fetch()->closeCursor();
+                ->execute()
+                ->fetch()
+                ->closeCursor();
         } catch (\PDOException $e) {
             \App\SchoolManager\loggerException($e);
         }
-        return is_array($this->getResult())? current($this->getResult()): $this->getResult();
+        return is_array($this->getResults())? current($this->getResults()): $this->getResults();
     }
     public function retrieveEcolesByLimitAndOffset(int $limit, int $offset): mixed
     {
@@ -215,26 +218,30 @@ class EcoleMapper extends Mapper implements Countable
                 ->bindParam(':limit', $limit, \PDO::PARAM_INT)
                 ->bindParam(':offset', $offset, \PDO::PARAM_INT)
                 ->execute()->fetchAll(\PDO::FETCH_ASSOC)
-                ->closeCursor()->getResult(); 
+                ->closeCursor()->getResults(); 
 
-            if (is_array($ecoles) && count($ecoles) > 0) {
-                foreach ($ecoles as $ecole) {
+            if (is_array($ecoles) && count($ecoles) > 0) 
+            {
+                foreach ($ecoles as $ecole) 
+                {
                     $adresses = $this->retrieveEcoleAdressesArray($ecole['id']);
+                    $images = $this->retrieveEcoleAndImagesArray($ecole['id']);
                     $ecoleObject = new Ecole(
                         id: $ecole['id'], nom: $ecole['nom'], 
                         email: $ecole['email'], telephone: $ecole['telephone'],
                         type: $ecole['type'], site: $ecole['site'], 
-                        maximage: $ecole['maximage'], adresses: $adresses 
+                        maximage: $ecole['maximage'], adresses: $adresses,
+                        images: $images
                     );
                     $ecolesArray[] = $ecoleObject->toArray();
                 }
-                $this->results = $ecolesArray;
+                $this->setResults($ecolesArray);
             }
         } catch (\PDOException $e) {
             $this->results = false;
             \App\SchoolManager\loggerException($e);
         }
-        return $this->getResult();
+        return $this->getResults();
     }
     public function updateEcoleAndAdresses(Ecole $ecole): self 
     {
@@ -378,7 +385,7 @@ class EcoleMapper extends Mapper implements Countable
                 ->bindParam(':commune',  $commune, \PDO::PARAM_STR)
                 ->bindParam(':ecoleid',  $ecoleid, \PDO::PARAM_INT)
                 ->execute()->fetch(\PDO::FETCH_ASSOC)
-                ->closeCursor()->getResult();
+                ->closeCursor()->getResults();
             if (is_array($adresseRow)) {
                 $adresse = new Adresse(
                     id: $adresseRow['id'], voie: $adresseRow['voie'],
@@ -393,7 +400,7 @@ class EcoleMapper extends Mapper implements Countable
             $this->results = false;
             \App\SchoolManager\loggerException($e);
         }
-        return $this->getResult();
+        return $this->getResults();
 
     }
     public function retrieveAdressesByEcoleIdArray(int $ecoleid)
@@ -408,7 +415,7 @@ class EcoleMapper extends Mapper implements Countable
             $this->results = false;
             \App\SchoolManager\loggerException($e);
         }
-        return $this->getResult();
+        return $this->getResults();
     }
     public function retrieveAdresseById(int $id)
     {
@@ -418,7 +425,7 @@ class EcoleMapper extends Mapper implements Countable
             $adresseRow= $this->prepare($command)
                 ->bindParam(':id',  $id, PDO::PARAM_INT)
                 ->execute()->fetch(\PDO::FETCH_ASSOC)
-                ->closeCursor()->getResult();
+                ->closeCursor()->getResults();
                 if (is_array($adresseRow)) {
                     $adresse = new Adresse(
                         id: $adresseRow['id'], voie: $adresseRow['voie'],
@@ -432,7 +439,7 @@ class EcoleMapper extends Mapper implements Countable
             $this->results = false;
             \App\SchoolManager\loggerException($e);
         }
-        return $this->getResult();
+        return $this->getResults();
     }
     public function retrieveAdresseByEcoleIdAndAdresseId(int $ecoleid, int $adresseid)
     {
@@ -443,8 +450,10 @@ class EcoleMapper extends Mapper implements Countable
             $adresseRow= $this->prepare($command)
                 ->bindParam(':ecoleid', $ecoleid, PDO::PARAM_INT)
                 ->bindParam(':adresseid', $adresseid, PDO::PARAM_INT)
-                ->execute()->fetch(\PDO::FETCH_ASSOC)
-                ->closeCursor()->getResult();
+                ->execute()
+                ->fetch(\PDO::FETCH_ASSOC)
+                ->closeCursor()
+                ->getResults();
                 if (is_array($adresseRow)) {
                     $adresse = new Adresse(
                         id: $adresseRow['id'], voie: $adresseRow['voie'],
@@ -452,13 +461,13 @@ class EcoleMapper extends Mapper implements Countable
                         district: $adresseRow['district'], ville: $adresseRow['ville'],
                         reference: $adresseRow['reference'], ecoleid: $adresseRow['ecoleid']
                     );
-                    $this->results = $adresse;
+                    $this->setResults($adresse);
                 }
         } catch (\PDOException $e) {
-            $this->results = false;
+            $this->setResults(false);
             \App\SchoolManager\loggerException($e);
         }
-        return $this->getResult();
+        return $this->getResults();
     }
     public function updateAdresse(Adresse $adresse) 
     {
@@ -488,7 +497,7 @@ class EcoleMapper extends Mapper implements Countable
 
             $smt->execute();
         } catch (\PDOException $e) {
-            $this->results = false;
+            $this->setResults(false);
             \App\SchoolManager\loggerException($e);
         }
         return $this;
@@ -517,9 +526,9 @@ class EcoleMapper extends Mapper implements Countable
             $smt->bindParam(':ville', $ville, PDO::PARAM_STR);
             $smt->bindParam(':ecoleid', $ecoleid, PDO::PARAM_INT);
             $smt->execute();
-            $this->results = true;
+            $this->setResults(true);
         } catch (\PDOException $e) {
-            $this->results = false;
+            $this->setResults(false);
             \App\SchoolManager\loggerException($e);
         }
         return $this;
@@ -539,7 +548,7 @@ class EcoleMapper extends Mapper implements Countable
                 }
             }
         } catch (\PDOException $e) {
-            $this->results = false;
+            $this->setResults(false);
             \App\SchoolManager\loggerException($e);
         }
     }
@@ -562,9 +571,86 @@ class EcoleMapper extends Mapper implements Countable
                 $imagesRows[] = $image->toArray();
             }
         } catch (\PDOException $e) {
-            $this->results = false;
+            $this->setResults(false);
             \App\SchoolManager\loggerException($e);
         }
         return $imagesRows;
+    }
+    public function retrieve(?int $id= null, Ecole $ecole= null): self 
+    {
+       if(!is_null($id) ) {
+            $command = 'SELECT ecoles.* FROM ecoles WHERE id = :id';
+            $this->prepare($command)
+             ->bindParam(':id', $id, PDO::PARAM_INT);
+        } elseif(is_null($id) && (!is_null($ecole) && $ecole instanceof Ecole)) {
+            $nom = $ecole->getNom();
+            $command = 'SELECT ecoles.* FROM ecoles WHERE nom = :nom ';
+            $ecole = $this
+                ->prepare($command)
+                ->bindParam(':nom', $nom, \PDO::PARAM_STR);
+        }else {
+            $command = 'SELECT ecoles.* FROM ecoles ';
+            $this->prepare($command);
+        }
+        return $this;
+    }
+
+    public function add(Ecole $ecole): self 
+    {
+        $nom = $ecole->getNom();
+        $email = $ecole->getEmail();
+        $telephone = $ecole->getTelephone();
+        $type= $ecole->getType();
+        $site = $ecole->getSite();
+        $maximage = $ecole->getMaximage();
+
+        $command  = 'INSERT INTO ecoles (nom, email, telephone,type, site, maximage)  ';
+        $command .= 'VALUES (:nom, :email, :telephone, :type, :site, :maximage) ';
+
+        $this
+            ->prepare($command)
+            ->bindParam(':nom', $nom, \PDO::PARAM_STR)
+            ->bindParam(':email', $email, \PDO::PARAM_STR|\PDO::PARAM_NULL)
+            ->bindParam(':telephone', $telephone, \PDO::PARAM_STR|\PDO::PARAM_NULL)
+            ->bindParam(':type', $type, \PDO::PARAM_STR|\PDO::PARAM_NULL)
+            ->bindParam(':site', $site, \PDO::PARAM_STR|\PDO::PARAM_NULL)
+            ->bindParam(':maximage', $maximage, \PDO::PARAM_INT|\PDO::PARAM_NULL); 
+
+        return $this;
+    }
+
+    public function update(Ecole $ecole): self 
+    {
+        $nom = $ecole->getNom();
+        $email = $ecole->getEmail();
+        $telephone = $ecole->getTelephone();
+        $type= $ecole->getType();
+        $site = $ecole->getSite();
+        $maximage = $ecole->getMaximage();
+        $id = $ecole->getId();
+
+        $command  = 'UPDATE ecoles SET nom= :nom, email= :email, telephone= :telephone, ';
+        $command .= 'type= :type, site= :site, maximage = :maximage ';
+        $command .= 'WHERE id= :id ';
+
+        
+        $this->prepare($command)
+            ->bindParam(':nom', $nom, \PDO::PARAM_STR)
+            ->bindParam(':email', $email, \PDO::PARAM_STR|\PDO::PARAM_NULL)
+            ->bindParam(':telephone', $telephone, \PDO::PARAM_STR|\PDO::PARAM_NULL)
+            ->bindParam(':type', $type, \PDO::PARAM_STR|\PDO::PARAM_NULL)
+            ->bindParam(':site', $site, \PDO::PARAM_STR|\PDO::PARAM_NULL)
+            ->bindParam(':maximage', $maximage, \PDO::PARAM_INT|\PDO::PARAM_NULL)
+            ->bindParam(':id', $id, \PDO::PARAM_INT);
+        return $this;
+    }
+
+    public function remove(?int $id= null) 
+    {
+        $command = 'DELETE FROM ecoles WHERE id = :id ';
+        $this
+            ->prepare($command)
+            ->bindParam(':id', $id, PDO::PARAM_INT);
+        return $this;
     }
 }
