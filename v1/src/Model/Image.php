@@ -33,14 +33,15 @@ namespace App\SchoolManager\Model
             ?int $id, ?string $title, ?string $filename,
             ?string $mimetype,?int $ecoleid = null
         ) {
-            $this->setId($id)
-            ->setTitle($title)
-            ->setFilename($filename)
-            ->setMimetype($mimetype)
-            ->setEcoleid($ecoleid)
-            ->setUploadFolderLocation(
-                join(DS, [APP_IMAGES_ROOT, 'ecoles'])
-            );
+            $this
+                ->setId($id)
+                ->setTitle($title)
+                ->setFilename($filename)
+                ->setMimetype($mimetype)
+                ->setEcoleid($ecoleid)
+                ->setUploadFolderLocation(
+                    join(DS, [APP_IMAGES_ROOT, 'ecoles'])
+                );
         }
                 
         /**

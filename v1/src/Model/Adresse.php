@@ -39,14 +39,14 @@ namespace App\SchoolManager\Model
         ) {
 
             $this
-             ->setId($id)
-             ->setVoie($voie)
-             ->setQuartier($quartier)
-             ->setCommune($commune)
-             ->setDistrict($district)
-             ->setVille($ville)
-             ->setReference($reference)
-             ->setEcoleid($ecoleid);
+                ->setId($id)
+                ->setVoie($voie)
+                ->setQuartier($quartier)
+                ->setCommune($commune)
+                ->setDistrict($district)
+                ->setVille($ville)
+                ->setReference($reference)
+                ->setEcoleid($ecoleid);
         }
                 
         /**

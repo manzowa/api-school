@@ -39,15 +39,15 @@ namespace App\SchoolManager\Model
             array $adresses = [], array $images = []
         ) {
            $this
-            ->setId($id)
-            ->setNom($nom)
-            ->setEmail($email)
-            ->setTelephone($telephone)
-            ->setType($type)
-            ->setSite($site)
-            ->setMaximage($maximage)
-            ->setAdresses($adresses)
-            ->setImages($images);
+                ->setId($id)
+                ->setNom($nom)
+                ->setEmail($email)
+                ->setTelephone($telephone)
+                ->setType($type)
+                ->setSite($site)
+                ->setMaximage($maximage)
+                ->setAdresses($adresses)
+                ->setImages($images);
         }
 
         /**
