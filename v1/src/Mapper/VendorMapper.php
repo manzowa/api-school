@@ -20,7 +20,7 @@ use ApiSchool\V1\Model\Adresse;
 
 class VendorMapper extends Mapper 
 {
-    use \ApiSchool\V1\Mapper\Trait\ecoleTrait;
+    use \ApiSchool\V1\Mapper\Trait\EcoleTrait;
     use \ApiSchool\V1\Mapper\Trait\AdresseTrait;
     use \ApiSchool\V1\Mapper\Trait\ImageTrait;
 
