@@ -7,19 +7,19 @@
  * Date: 11.08.2024
  * php version 8.2
  *
- * @category Assessment
- * @package  SchoolManager
+ * @category ApiSchool\V1
+ * @package  ApiSchool\V1
  * @author   Christian SHUNGU <christianshungu@gmail.com>
  * @license  See LICENSE file
  * @link     https://manzowa.com
  */
-namespace App\SchoolManager\Controller
+namespace ApiSchool\V1\Controller
 {
-    use App\SchoolManager\Database\Connexion;
-    use App\SchoolManager\Attribute\Route;
-    use App\SchoolManager\Exception\UserException;
-    use App\SchoolManager\Model\User;
-    use App\SchoolManager\Mapper\VendorMapper;
+    use ApiSchool\V1\Database\Connexion;
+    use ApiSchool\V1\Attribute\Route;
+    use ApiSchool\V1\Exception\UserException;
+    use ApiSchool\V1\Model\User;
+    use ApiSchool\V1\Mapper\VendorMapper;
 
     #[Route(path:'/api/v1')]
     class UserController
@@ -29,15 +29,15 @@ namespace App\SchoolManager\Controller
          * 
          * Il permet d'ajouter une école
          *
-         * @param \App\SchoolManager\Http\Request $request
-         * @param \App\SchoolManager\Http\Response $response
+         * @param \ApiSchool\V1\Http\Request $request
+         * @param \ApiSchool\V1\Http\Response $response
          * 
          * @return mixed
          */
         #[Route(path:'/users', name:'users.post', method: 'POST')]
         public function postAction(
-            \App\SchoolManager\Http\Request $request, 
-            \App\SchoolManager\Http\Response $response
+            \ApiSchool\V1\Http\Request $request, 
+            \ApiSchool\V1\Http\Response $response
         ) {
             // Establish the connection Database
             $connexionWrite = Connexion::write();

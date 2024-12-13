@@ -1,2 +1,4 @@
 v1/vendor/*
 v1/*.env
+v1/vendor
+v1/*.env.prod

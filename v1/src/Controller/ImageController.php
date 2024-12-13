@@ -7,21 +7,21 @@
  * Date: 11.08.2024
  * php version 8.2
  *
- * @category Assessment
- * @package  SchoolManager
+ * @category ApiSchool\V1
+ * @package  ApiSchool\V1
  * @author   Christian SHUNGU <christianshungu@gmail.com>
  * @license  See LICENSE file
  * @link     https://manzowa.com
  */
-namespace App\SchoolManager\Controller
+namespace ApiSchool\V1\Controller
 {
-    use App\SchoolManager\Database\Connexion;
-    use App\SchoolManager\Attribute\Route;
-    use App\SchoolManager\Exception\EcoleException;
-    use App\SchoolManager\Mapper\VendorMapper;
-    use App\SchoolManager\Model\Image;
-    use App\SchoolManager\Model\Ecole;
-    use \App\SchoolManager\Exception\ImageException;
+    use ApiSchool\V1\Database\Connexion;
+    use ApiSchool\V1\Attribute\Route;
+    use ApiSchool\V1\Exception\EcoleException;
+    use ApiSchool\V1\Mapper\VendorMapper;
+    use ApiSchool\V1\Model\Image;
+    use ApiSchool\V1\Model\Ecole;
+    use \ApiSchool\V1\Exception\ImageException;
 
     #[Route(path:'/api/v1')]
     class ImageController
@@ -31,15 +31,15 @@ namespace App\SchoolManager\Controller
          * 
          * Il permet de recupère les images
          * 
-         * @param \App\SchoolManager\Http\Request $request
-         * @param \App\SchoolManager\Http\Response $response
+         * @param \ApiSchool\V1\Http\Request $request
+         * @param \ApiSchool\V1\Http\Response $response
          *
          * @return mixed
          */
         #[Route(path:'/ecoles/([0-9]+)/images', name:'images.get')]
         public function getImagesAction(
-            \App\SchoolManager\Http\Request $request, 
-            \App\SchoolManager\Http\Response $response
+            \ApiSchool\V1\Http\Request $request, 
+            \ApiSchool\V1\Http\Response $response
         ) {
             // Establish the connection Database
             $connexionRead = Connexion::read();
@@ -93,8 +93,8 @@ namespace App\SchoolManager\Controller
         /**
          * Method postImagesAction [POST]
          *
-         * @param \App\SchoolManager\Http\Request $request
-         * @param \App\SchoolManager\Http\Response $response
+         * @param \ApiSchool\V1\Http\Request $request
+         * @param \ApiSchool\V1\Http\Response $response
          * 
          * @return mixed
          */
@@ -103,8 +103,8 @@ namespace App\SchoolManager\Controller
             method:'POST'
         )]
         public function postImagesAction(
-            \App\SchoolManager\Http\Request $request, 
-            \App\SchoolManager\Http\Response $response
+            \ApiSchool\V1\Http\Request $request, 
+            \ApiSchool\V1\Http\Response $response
         ) {
             // Establish the connection Database
             $connexionWrite = Connexion::write();
@@ -332,15 +332,15 @@ namespace App\SchoolManager\Controller
          * 
          * Il permet de recupère les images
          * 
-         * @param \App\SchoolManager\Http\Request $request
-         * @param \App\SchoolManager\Http\Response $response
+         * @param \ApiSchool\V1\Http\Request $request
+         * @param \ApiSchool\V1\Http\Response $response
          *
          * @return mixed
          */
         #[Route(path:'/ecoles/([0-9]+)/images/([0-9]+)', name:'images.getOne')]
         public function getOneImageAction(
-            \App\SchoolManager\Http\Request $request, 
-            \App\SchoolManager\Http\Response $response
+            \ApiSchool\V1\Http\Request $request, 
+            \ApiSchool\V1\Http\Response $response
         ) {
             // Establish the connection Database
             $connexionRead = Connexion::read();
@@ -399,8 +399,8 @@ namespace App\SchoolManager\Controller
         /**
          * Method postImagesAction [DELETE]
          *
-         * @param \App\SchoolManager\Http\Request $request
-         * @param \App\SchoolManager\Http\Response $response
+         * @param \ApiSchool\V1\Http\Request $request
+         * @param \ApiSchool\V1\Http\Response $response
          * 
          * @return mixed
          */
@@ -409,8 +409,8 @@ namespace App\SchoolManager\Controller
             name:'images.deleteOne', method:'DELETE'
         )]
         public function deleteImagesAction(
-            \App\SchoolManager\Http\Request $request, 
-            \App\SchoolManager\Http\Response $response
+            \ApiSchool\V1\Http\Request $request, 
+            \ApiSchool\V1\Http\Response $response
         ) {
             // Establish the connection Database
             $connexionWrite = Connexion::write();
@@ -528,8 +528,8 @@ namespace App\SchoolManager\Controller
         /**
          * Method postImagesAction [GET]
          *
-         * @param \App\SchoolManager\Http\Request $request
-         * @param \App\SchoolManager\Http\Response $response
+         * @param \ApiSchool\V1\Http\Request $request
+         * @param \ApiSchool\V1\Http\Response $response
          * 
          * @return mixed
          */
@@ -538,8 +538,8 @@ namespace App\SchoolManager\Controller
             name:'images.attributes'
         )]
         public function getImageAttributesAction(
-            \App\SchoolManager\Http\Request $request, 
-            \App\SchoolManager\Http\Response $response
+            \ApiSchool\V1\Http\Request $request, 
+            \ApiSchool\V1\Http\Response $response
         ) {
             // Establish the connection Database
             $connexionRead = Connexion::read();
@@ -602,8 +602,8 @@ namespace App\SchoolManager\Controller
         /**
          * Method patchImageAttributesAction [PATCH]
          *
-         * @param \App\SchoolManager\Http\Request $request
-         * @param \App\SchoolManager\Http\Response $response
+         * @param \ApiSchool\V1\Http\Request $request
+         * @param \ApiSchool\V1\Http\Response $response
          * 
          * @return mixed
          */
@@ -612,8 +612,8 @@ namespace App\SchoolManager\Controller
             name:'images.attributes', method: 'PATCH'
         )]
         public function patchImageAttributesAction(
-            \App\SchoolManager\Http\Request $request, 
-            \App\SchoolManager\Http\Response $response
+            \ApiSchool\V1\Http\Request $request, 
+            \ApiSchool\V1\Http\Response $response
         ) {
             // Establish the connection Database
             $connexionWrite = Connexion::write();

@@ -5,21 +5,21 @@
  * Date: 11.08.2024
  * php version 8.2
  *
- * @category Assessment
- * @package  SchoolManager
+ * @category ApiSchool\V1
+ * @package  ApiSchool\V1
  * @author   Christian SHUNGU <christianshungu@gmail.com>
  * @license  See LICENSE file
  * @link     https://manzowa.com
  */
-namespace App\SchoolManager
+namespace ApiSchool\V1
 {
-    use App\SchoolManager\Http\Response;
-    use App\SchoolManager\Attribute\Router;
-    use App\SchoolManager\Exception\RouteException;
+    use \ApiSchool\V1\Http\Response;
+    use \ApiSchool\V1\Attribute\Router;
+    use \ApiSchool\V1\Exception\RouteException;
 
     /**
      * Class Application 
-     * @package  SchoolManager
+     * @package  ApiSchool\V1
      */
     class App 
     {

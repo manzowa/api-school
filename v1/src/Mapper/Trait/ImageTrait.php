@@ -7,19 +7,19 @@
  * Date: 11.08.2024
  * php version 8.2
  *
- * @category Assessment
- * @package  SchoolManager
+ * @category ApiSchool\V1
+ * @package  ApiSchool\V1
  * @author   Christian SHUNGU <christianshungu@gmail.com>
  * @license  See LICENSE file
  * @link     https://manzowa.com
  */
-namespace App\SchoolManager\Mapper\Trait
+namespace ApiSchool\V1\Mapper\Trait
 {
     trait ImageTrait 
     {
         public function imageRetrieve(
             ?int $id= null, ?int $ecoleid = null, 
-            ?\App\SchoolManager\Model\Image $image = null
+            ?\ApiSchool\V1\Model\Image $image = null
         ): self 
         {
             if (!is_null($id) && !is_null($ecoleid)) {
@@ -44,7 +44,7 @@ namespace App\SchoolManager\Mapper\Trait
             } elseif( 
                 is_null($id) 
                 && is_null($ecoleid) 
-                && (!is_null($image) && $image instanceof \App\SchoolManager\Model\Image)
+                && (!is_null($image) && $image instanceof \ApiSchool\V1\Model\Image)
             ) {
                 $filename =  $image->getFilename();
                 $ecoleid = $image->getEcoleid();
@@ -62,7 +62,7 @@ namespace App\SchoolManager\Mapper\Trait
             }
             return $this;
         }
-        public function imageAdd(\App\SchoolManager\Model\Image $image):self 
+        public function imageAdd(\ApiSchool\V1\Model\Image $image):self 
         {
             $title = $image->getTitle();
             $filename = $image->getFilename();
@@ -81,7 +81,7 @@ namespace App\SchoolManager\Mapper\Trait
     
             return $this;
         }
-        public function imageUpdate(\App\SchoolManager\Model\Image $image): self 
+        public function imageUpdate(\ApiSchool\V1\Model\Image $image): self 
         {
             $title = $image->getTitle();
             $filename = $image->getFilename();

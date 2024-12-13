@@ -7,21 +7,21 @@
  * Date: 11.08.2024
  * php version 8.2
  *
- * @category Assessment
- * @package  SchoolManager
+ * @category ApiSchool\V1
+ * @package  ApiSchool\V1
  * @author   Christian SHUNGU <christianshungu@gmail.com>
  * @license  See LICENSE file
  * @link     https://manzowa.com
  */
-namespace App\SchoolManager\Controller
+namespace ApiSchool\V1\Controller
 {
-    use App\SchoolManager\Database\Connexion;
-    use App\SchoolManager\Exception\EcoleException;
-    use App\SchoolManager\Model\Ecole;
-    use App\SchoolManager\Attribute\Route;
-    use App\SchoolManager\Exception\AdresseException;
-    use App\SchoolManager\Model\Adresse;
-    use App\SchoolManager\Mapper\VendorMapper;
+    use ApiSchool\V1\Database\Connexion;
+    use ApiSchool\V1\Exception\EcoleException;
+    use ApiSchool\V1\Model\Ecole;
+    use ApiSchool\V1\Attribute\Route;
+    use ApiSchool\V1\Exception\AdresseException;
+    use ApiSchool\V1\Model\Adresse;
+    use ApiSchool\V1\Mapper\VendorMapper;
 
     #[Route(path:'/api/v1')]
     class EcoleController
@@ -31,15 +31,15 @@ namespace App\SchoolManager\Controller
          * 
          * Il permet de recupère les écoles
          * 
-         * @param \App\SchoolManager\Http\Request $request
-         * @param \App\SchoolManager\Http\Response $response
+         * @param \ApiSchool\V1\Http\Request $request
+         * @param \ApiSchool\V1\Http\Response $response
          *
          * @return mixed
          */
         #[Route(path:'/ecoles', name:'ecoles.get')]
         public function getAction(
-            \App\SchoolManager\Http\Request $request, 
-            \App\SchoolManager\Http\Response $response
+            \ApiSchool\V1\Http\Request $request, 
+            \ApiSchool\V1\Http\Response $response
         ) {
             // Establish the connection Database
             $connexionRead = Connexion::read();
@@ -106,15 +106,15 @@ namespace App\SchoolManager\Controller
          * 
          * Il permet d'ajouter une école
          *
-         * @param \App\SchoolManager\Http\Request $request
-         * @param \App\SchoolManager\Http\Response $response
+         * @param \ApiSchool\V1\Http\Request $request
+         * @param \ApiSchool\V1\Http\Response $response
          * 
          * @return mixed
          */
         #[Route(path:'/ecoles', name:'ecoles.post', method: 'POST')]
         public function postAction(
-            \App\SchoolManager\Http\Request $request, 
-            \App\SchoolManager\Http\Response $response
+            \ApiSchool\V1\Http\Request $request, 
+            \ApiSchool\V1\Http\Response $response
         ) {
             // Establish the connection Database
             $connexionWrite = Connexion::write();
@@ -339,15 +339,15 @@ namespace App\SchoolManager\Controller
         /**
          * Method getOneAction [GET]
          *
-         * @param \App\SchoolManager\Http\Request $request
-         * @param \App\SchoolManager\Http\Response $response
+         * @param \ApiSchool\V1\Http\Request $request
+         * @param \ApiSchool\V1\Http\Response $response
          * 
          * @return void
          */
         #[Route(path:'/ecoles/([0-9]+)', name:'ecoles.getOne')]
         public function getOneAction(
-            \App\SchoolManager\Http\Request $request, 
-            \App\SchoolManager\Http\Response $response
+            \ApiSchool\V1\Http\Request $request, 
+            \ApiSchool\V1\Http\Response $response
         ) {
             // Establish the connection Database
             $connexionRead = Connexion::read();
@@ -424,15 +424,15 @@ namespace App\SchoolManager\Controller
         /**
          * Method putOneAction [PUT]
          *
-         * @param \App\SchoolManager\Http\Request $request
-         * @param \App\SchoolManager\Http\Response $response
+         * @param \ApiSchool\V1\Http\Request $request
+         * @param \ApiSchool\V1\Http\Response $response
          * 
          * @return mixed
          */
         #[Route(path:'/ecoles/([0-9]+)', name:'ecoles.putOne', method: 'PUT')]
         public function putOneAction(
-            \App\SchoolManager\Http\Request $request, 
-            \App\SchoolManager\Http\Response $response
+            \ApiSchool\V1\Http\Request $request, 
+            \ApiSchool\V1\Http\Response $response
         ) 
         {
             // Establish the connection Database
@@ -639,15 +639,15 @@ namespace App\SchoolManager\Controller
         /**
          * Method patchOneAction [PATCH]
          *
-         * @param \App\SchoolManager\Http\Request $request
-         * @param \App\SchoolManager\Http\Response $response
+         * @param \ApiSchool\V1\Http\Request $request
+         * @param \ApiSchool\V1\Http\Response $response
          * 
          * @return mixed
          */
         #[Route(path:'/ecoles/([0-9]+)', name:'ecoles.patchOne', method: 'PATCH')]
         public function patchOneAction(
-            \App\SchoolManager\Http\Request $request, 
-            \App\SchoolManager\Http\Response $response
+            \ApiSchool\V1\Http\Request $request, 
+            \ApiSchool\V1\Http\Response $response
         ) {
             // Establish the connection Database
             $connexionWrite = Connexion::write();
@@ -815,15 +815,15 @@ namespace App\SchoolManager\Controller
         /**
          * Method deleteOneEcole  [DELETE]
          *
-         * @param \App\SchoolManager\Http\Request $request
-         * @param \App\SchoolManager\Http\Response $response
+         * @param \ApiSchool\V1\Http\Request $request
+         * @param \ApiSchool\V1\Http\Response $response
          * 
          * @return mixed
          */
         #[Route(path:'/ecoles/([0-9]+)', name:'ecoles.deleteOne', method: 'DELETE')]
         public function deleteOneAction(
-            \App\SchoolManager\Http\Request $request, 
-            \App\SchoolManager\Http\Response $response
+            \ApiSchool\V1\Http\Request $request, 
+            \ApiSchool\V1\Http\Response $response
         ) {
             // Establish the connection Database
             $connexionWrite = Connexion::write();
@@ -873,15 +873,15 @@ namespace App\SchoolManager\Controller
         /**
          * Method getPageAction [GET]
          *
-         * @param \App\SchoolManager\Http\Request $request
-         * @param \App\SchoolManager\Http\Response $response
+         * @param \ApiSchool\V1\Http\Request $request
+         * @param \ApiSchool\V1\Http\Response $response
          * 
          * @return mixed
          */
         #[Route(path:'/ecoles/page/([0-9]+)', name:'ecoles.getPerPage')]
         public function getPageAction(
-            \App\SchoolManager\Http\Request $request, 
-            \App\SchoolManager\Http\Response $response
+            \ApiSchool\V1\Http\Request $request, 
+            \ApiSchool\V1\Http\Response $response
         ) {
             // Establish the connection Database
             $connexionRead = Connexion::read();

@@ -1,8 +1,8 @@
 <?php
 
-namespace App\SchoolManager\Http; 
+namespace ApiSchool\V1\Http; 
 
-use App\SchoolManager\Http\UploadedFile;
+use ApiSchool\V1\Http\UploadedFile;
 
 /**
  * Class Request
@@ -11,8 +11,8 @@ use App\SchoolManager\Http\UploadedFile;
  * Date: 11.08.2024
  * php version 8.2
  *
- * @category Assessment
- * @package  SchoolManager
+ * @category ApiSchool\V1
+ * @package  ApiSchool\V1
  * @author   User: Christian SHUNGU <christianshungu@gmail.com>
  * @license  See LICENSE file
  * @link     https://manzowa.com

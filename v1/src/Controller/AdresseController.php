@@ -7,19 +7,19 @@
  * Date: 11.08.2024
  * php version 8.2
  *
- * @category Assessment
- * @package  SchoolManager
+ * @category ApiSchool\V1
+ * @package  ApiSchool\V1
  * @author   Christian SHUNGU <christianshungu@gmail.com>
  * @license  See LICENSE file
  * @link     https://manzowa.com
  */
-namespace App\SchoolManager\Controller
+namespace ApiSchool\V1\Controller
 {
-    use App\SchoolManager\Database\Connexion;
-    use App\SchoolManager\Exception\AdresseException;
-    use App\SchoolManager\Attribute\Route;
-    use App\SchoolManager\Mapper\VendorMapper;
-    use App\SchoolManager\Model\Adresse;
+    use ApiSchool\V1\Database\Connexion;
+    use ApiSchool\V1\Exception\AdresseException;
+    use ApiSchool\V1\Attribute\Route;
+    use ApiSchool\V1\Mapper\VendorMapper;
+    use ApiSchool\V1\Model\Adresse;
 
     #[Route(path:'/api/v1')]
     class AdresseController
@@ -27,15 +27,15 @@ namespace App\SchoolManager\Controller
         /**
          * Method getAdressesAction [GET]
          *
-         * @param \App\SchoolManager\Http\Request $request
-         * @param \App\SchoolManager\Http\Response $response
+         * @param \ApiSchool\V1\Http\Request $request
+         * @param \ApiSchool\V1\Http\Response $response
          * 
          * @return mixed
          */
         #[Route(path:'/ecoles/([0-9]+)/adresses', name:'adresses.get')]
         public function getAdressesAction(
-            \App\SchoolManager\Http\Request $request, 
-            \App\SchoolManager\Http\Response $response
+            \ApiSchool\V1\Http\Request $request, 
+            \ApiSchool\V1\Http\Response $response
         ) {
             // Establish the connection Database
             $connexionRead = Connexion::read();
@@ -80,8 +80,8 @@ namespace App\SchoolManager\Controller
         /**
          * Method postAdressesAction [POST]
          *
-         * @param \App\SchoolManager\Http\Request $request
-         * @param \App\SchoolManager\Http\Response $response
+         * @param \ApiSchool\V1\Http\Request $request
+         * @param \ApiSchool\V1\Http\Response $response
          * 
          * @return mixed
          */
@@ -90,8 +90,8 @@ namespace App\SchoolManager\Controller
             method:'POST'
         )]
         public function postAdressesAction(
-            \App\SchoolManager\Http\Request $request, 
-            \App\SchoolManager\Http\Response $response
+            \ApiSchool\V1\Http\Request $request, 
+            \ApiSchool\V1\Http\Response $response
         ) {
             // Establish the connection Database
             $connexionWrite = Connexion::write();
@@ -275,15 +275,15 @@ namespace App\SchoolManager\Controller
         /**
          * Method getOneAdresseAction [GET]
          *
-         * @param \App\SchoolManager\Http\Request $request
-         * @param \App\SchoolManager\Http\Response $response
+         * @param \ApiSchool\V1\Http\Request $request
+         * @param \ApiSchool\V1\Http\Response $response
          * 
          * @return mixed
          */
         #[Route(path:'/ecoles/([0-9]+)/adresses/([0-9]+)', name:'adresses.getOne')]
         public function getOneAdresseAction(
-            \App\SchoolManager\Http\Request $request, 
-            \App\SchoolManager\Http\Response $response
+            \ApiSchool\V1\Http\Request $request, 
+            \ApiSchool\V1\Http\Response $response
         ) {
             // Establish the connection Database
             $connexionRead = Connexion::read();
@@ -341,8 +341,8 @@ namespace App\SchoolManager\Controller
         /**
          * Method putOneAdresseAction [PUT]
          *
-         * @param \App\SchoolManager\Http\Request $request
-         * @param \App\SchoolManager\Http\Response $response
+         * @param \ApiSchool\V1\Http\Request $request
+         * @param \ApiSchool\V1\Http\Response $response
          * 
          * @return mixed
          */
@@ -351,8 +351,8 @@ namespace App\SchoolManager\Controller
             name:'adresses.putOne', method:"PUT"
         )]
         public function putOneAdresseAction(
-            \App\SchoolManager\Http\Request $request, 
-            \App\SchoolManager\Http\Response $response
+            \ApiSchool\V1\Http\Request $request, 
+            \ApiSchool\V1\Http\Response $response
         ) {
             // Establish the connection Database
             $connexionWrite = Connexion::write();
@@ -601,8 +601,8 @@ namespace App\SchoolManager\Controller
         /**
          * Method patchOneAdresseAction [PATCH]
          *
-         * @param \App\SchoolManager\Http\Request $request
-         * @param \App\SchoolManager\Http\Response $response
+         * @param \ApiSchool\V1\Http\Request $request
+         * @param \ApiSchool\V1\Http\Response $response
          * 
          * @return mixed
          */
@@ -611,8 +611,8 @@ namespace App\SchoolManager\Controller
             name:'adresses.patchOne', method:"PATCH"
         )]
         public function patchOneAdresseAction(
-            \App\SchoolManager\Http\Request $request, 
-            \App\SchoolManager\Http\Response $response
+            \ApiSchool\V1\Http\Request $request, 
+            \ApiSchool\V1\Http\Response $response
         ) {
             // Establish the connection Database
             $connexionWrite = Connexion::write();
@@ -797,8 +797,8 @@ namespace App\SchoolManager\Controller
         /**
          * Method deleteOneAdresseAction [DELETE]
          *
-         * @param \App\SchoolManager\Http\Request $request
-         * @param \App\SchoolManager\Http\Response $response
+         * @param \ApiSchool\V1\Http\Request $request
+         * @param \ApiSchool\V1\Http\Response $response
          * 
          * @return mixed
          */
@@ -807,8 +807,8 @@ namespace App\SchoolManager\Controller
             name:'adresses.deleteOne', method:"DELETE"
         )]
         public function deleteOneAdresseAction(
-            \App\SchoolManager\Http\Request $request, 
-            \App\SchoolManager\Http\Response $response
+            \ApiSchool\V1\Http\Request $request, 
+            \ApiSchool\V1\Http\Response $response
         ) {
             // Establish the connection Database
             $connexionWrite = Connexion::write();

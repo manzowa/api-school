@@ -13,14 +13,14 @@
  * @license  See LICENSE file
  * @link     https://manzowa.com
  */
-namespace App\SchoolManager\Mapper\Trait;
+namespace ApiSchool\V1\Mapper\Trait;
 
 
 trait AdresseTrait
 {
     public function adresseRetrieve(
         ?int $id= null, ?int $ecoleid = null, 
-        ?\App\SchoolManager\Model\Adresse $adresse = null
+        ?\ApiSchool\V1\Model\Adresse $adresse = null
     ):self
     {
         if (!is_null($id) && !is_null($ecoleid)) {
@@ -45,7 +45,7 @@ trait AdresseTrait
         } elseif(
             is_null($id) 
             && is_null($ecoleid)
-            && (!is_null($adresse) && $adresse instanceof \App\SchoolManager\Model\Adresse)
+            && (!is_null($adresse) && $adresse instanceof \ApiSchool\V1\Model\Adresse)
         ) {
             $voie = $adresse->getVoie();
             $quartier = $adresse->getQuartier();
@@ -70,7 +70,7 @@ trait AdresseTrait
         }
         return $this;
     }
-    public function adresseAdd(\App\SchoolManager\Model\Adresse $adresse): self
+    public function adresseAdd(\ApiSchool\V1\Model\Adresse $adresse): self
     {
         $voie = $adresse->getVoie();
         $quartier = $adresse->getQuartier();
@@ -96,7 +96,7 @@ trait AdresseTrait
             ->bindParam(':ecoleid', $ecoleid, \PDO::PARAM_INT);
         return $this;
     }
-    public function adresseUpdate(\App\SchoolManager\Model\Adresse $adresse): self
+    public function adresseUpdate(\ApiSchool\V1\Model\Adresse $adresse): self
     {
         $voie = $adresse->getVoie();
         $quartier = $adresse->getQuartier();

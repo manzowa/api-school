@@ -7,24 +7,24 @@
  * Date: 11.08.2024
  * php version 8.2
  *
- * @category Assessment
- * @package  SchoolManager
+ * @category ApiSchool\V1
+ * @package  ApiSchool\V1
  * @author   Christian SHUNGU <christianshungu@gmail.com>
  * @license  See LICENSE file
  * @link     https://manzowa.com
  */
-namespace App\SchoolManager\Mapper;
+namespace ApiSchool\V1\Mapper;
 
-use App\SchoolManager\Model\Adresse;
+use ApiSchool\V1\Model\Adresse;
 
 
 class VendorMapper extends Mapper 
 {
-    use \App\SchoolManager\Mapper\Trait\ecoleTrait;
-    use \App\SchoolManager\Mapper\Trait\AdresseTrait;
-    use \App\SchoolManager\Mapper\Trait\ImageTrait;
+    use \ApiSchool\V1\Mapper\Trait\ecoleTrait;
+    use \ApiSchool\V1\Mapper\Trait\AdresseTrait;
+    use \ApiSchool\V1\Mapper\Trait\ImageTrait;
 
-    public function findEcoles(?int $id= null, \App\SchoolManager\Model\Ecole $ecole= null): self
+    public function findEcoles(?int $id= null, \ApiSchool\V1\Model\Ecole $ecole= null): self
     {
         $this->ecoleRetrieve(id: $id, ecole: $ecole)
             ->executeQuery();

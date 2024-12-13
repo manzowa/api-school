@@ -7,18 +7,18 @@
  * Date: 11.08.2024
  * php version 8.2
  *
- * @category Assessment
- * @package  SchoolManager
+ * @category ApiSchool\V1
+ * @package  ApiSchool\V1
  * @author   Christian SHUNGU <christianshungu@gmail.com>
  * @license  See LICENSE file
  * @link     https://manzowa.com
  */
-namespace App\SchoolManager\Mapper\Trait
+namespace ApiSchool\V1\Mapper\Trait
 {
     trait ecoleTrait
     {
         public function ecoleRetrieve(
-            ?int $id= null, \App\SchoolManager\Model\Ecole $ecole= null
+            ?int $id= null, \ApiSchool\V1\Model\Ecole $ecole= null
         ): self 
         {
            if(!is_null($id) ) {
@@ -27,7 +27,7 @@ namespace App\SchoolManager\Mapper\Trait
                  ->bindParam(':id', $id, \PDO::PARAM_INT);
             } elseif(
                 is_null($id) 
-                && (!is_null($ecole) && $ecole instanceof \App\SchoolManager\Model\Ecole)
+                && (!is_null($ecole) && $ecole instanceof \ApiSchool\V1\Model\Ecole)
             ) {
                 $nom = $ecole->getNom();
                 $command = 'SELECT ecoles.* FROM ecoles WHERE nom = :nom ';
@@ -41,7 +41,7 @@ namespace App\SchoolManager\Mapper\Trait
             return $this;
         }
     
-        public function ecoleAdd(\App\SchoolManager\Model\Ecole $ecole): self 
+        public function ecoleAdd(\ApiSchool\V1\Model\Ecole $ecole): self 
         {
             $nom = $ecole->getNom();
             $email = $ecole->getEmail();
@@ -65,7 +65,7 @@ namespace App\SchoolManager\Mapper\Trait
             return $this;
         }
     
-        public function ecoleUpdate(\App\SchoolManager\Model\Ecole $ecole): self 
+        public function ecoleUpdate(\ApiSchool\V1\Model\Ecole $ecole): self 
         {
             $nom = $ecole->getNom();
             $email = $ecole->getEmail();
