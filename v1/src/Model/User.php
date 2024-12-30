@@ -131,8 +131,8 @@ namespace ApiSchool\V1\Model {
         {
             if (
                 is_null($fullname)
-                || mb_strlen($fullname) < 0
-                || mb_strlen($fullname) > 255
+                || (@strlen($fullname) < 0)
+                || (@strlen($fullname) > 255)
             ) {
                 throw new UserException("School fullname error.");
             }

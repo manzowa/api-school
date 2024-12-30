@@ -117,6 +117,7 @@ namespace ApiSchool\V1\Controller {
                     username: $username, email: $email,
                     password: $hashed_password
                 );
+               
                 // Insert the User in the database
                 $mapper
                     ->userAdd(user: $user)
@@ -140,6 +141,7 @@ namespace ApiSchool\V1\Controller {
                         message:'Failed to retrieve user after to create.'
                     );
                 }
+                $row = current($row);
                 $newuser = User::fromState($row);
                 return $response->json(
                     statusCode: 201,
