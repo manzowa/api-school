@@ -15,5 +15,11 @@
 return  [
     ApiSchool\V1\Controller\EcoleController::class,
     ApiSchool\V1\Controller\AdresseController::class,
-    ApiSchool\V1\Controller\ImageController::class
+    ApiSchool\V1\Controller\ImageController::class,
+    ApiSchool\V1\Controller\UserController::class,
+    // ApiSchool\V1\Controller\AuthController::class,
+    ApiSchool\V1\Controller\TokenController::class,
+    // ApiSchool\V1\Controller\ResetPasswordController::class,
+    // ApiSchool\V1\Controller\VerificationController::class,
+
 ];

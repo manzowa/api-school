@@ -50,6 +50,49 @@ namespace ApiSchool\V1\Controller
                    message:'Database connection error'
                );
             }
+            // Check Authorisation header
+            if (!$request->getHeaderLine('HTTP_AUTHORIZATION') 
+                || @strlen($request->getHeaderLine('HTTP_AUTHORIZATION')) < 1
+            ) {
+                (
+                    $request->getHeaderLine('HTTP_AUTHORIZATION') 
+                    ?: $response->setMessage('Access token is missing from the header')
+                );
+                (
+                    @strlen($request->getHeaderLine('HTTP_AUTHORIZATION')) < 1
+                    ?: $response->setMessage('Access token cannot be blank')
+                );
+                return $response->json(
+                    statusCode:401, success:false
+                );
+            }
+            
+            $accessToken = $request->getHeaderLine('HTTP_AUTHORIZATION');
+            $auth = new \ApiSchool\V1\Auth\Auth(token: $accessToken);
+
+            // Check Access Token
+            if (!$auth->isValid()) {
+                return $response->json(
+                    statusCode: 401,
+                    success: false,
+                    message: 'Invalid access token'
+                );
+            }
+            // Check if user has exceeded maximum login attempts
+            if ($auth->getUser()->isLocked()) {
+                return $response->json(
+                    statusCode: 401, success: false,
+                    message: 'User account is currently locked out.'
+                );
+            }
+              // Check refresh token expiration
+              if ($auth->getToken()->accessTokenExpired()) {
+                return $response->json(
+                    statusCode: 401, success: false,
+                    message: 'Access token expired.'
+                );
+            }
+            // END Authorisation header
 
             $ecoleid = $request->getParam('ecoleid');
             // Check Parameter School ID
@@ -115,6 +158,49 @@ namespace ApiSchool\V1\Controller
                     message:'Database connection error'
                 );
             }
+            // Check Authorisation header
+            if (!$request->getHeaderLine('HTTP_AUTHORIZATION') 
+                || @strlen($request->getHeaderLine('HTTP_AUTHORIZATION')) < 1
+            ) {
+                (
+                    $request->getHeaderLine('HTTP_AUTHORIZATION') 
+                    ?: $response->setMessage('Access token is missing from the header')
+                );
+                (
+                    @strlen($request->getHeaderLine('HTTP_AUTHORIZATION')) < 1
+                    ?: $response->setMessage('Access token cannot be blank')
+                );
+                return $response->json(
+                    statusCode:401, success:false
+                );
+            }
+            
+            $accessToken = $request->getHeaderLine('HTTP_AUTHORIZATION');
+            $auth = new \ApiSchool\V1\Auth\Auth(token: $accessToken);
+
+            // Check Access Token
+            if (!$auth->isValid()) {
+                return $response->json(
+                    statusCode: 401,
+                    success: false,
+                    message: 'Invalid access token'
+                );
+            }
+            // Check if user has exceeded maximum login attempts
+            if ($auth->getUser()->isLocked()) {
+                return $response->json(
+                    statusCode: 401, success: false,
+                    message: 'User account is currently locked out.'
+                );
+            }
+              // Check refresh token expiration
+              if ($auth->getToken()->accessTokenExpired()) {
+                return $response->json(
+                    statusCode: 401, success: false,
+                    message: 'Access token expired.'
+                );
+            }
+            // END Authorisation header
 
             if (!isset($_SERVER['CONTENT_TYPE']) 
                 || strpos($_SERVER['CONTENT_TYPE'], "multipart/form-data; boundary=") === false
@@ -351,6 +437,49 @@ namespace ApiSchool\V1\Controller
                    message:'Database connection error'
                );
             }
+            // Check Authorisation header
+            if (!$request->getHeaderLine('HTTP_AUTHORIZATION') 
+                || @strlen($request->getHeaderLine('HTTP_AUTHORIZATION')) < 1
+            ) {
+                (
+                    $request->getHeaderLine('HTTP_AUTHORIZATION') 
+                    ?: $response->setMessage('Access token is missing from the header')
+                );
+                (
+                    @strlen($request->getHeaderLine('HTTP_AUTHORIZATION')) < 1
+                    ?: $response->setMessage('Access token cannot be blank')
+                );
+                return $response->json(
+                    statusCode:401, success:false
+                );
+            }
+            
+            $accessToken = $request->getHeaderLine('HTTP_AUTHORIZATION');
+            $auth = new \ApiSchool\V1\Auth\Auth(token: $accessToken);
+
+            // Check Access Token
+            if (!$auth->isValid()) {
+                return $response->json(
+                    statusCode: 401,
+                    success: false,
+                    message: 'Invalid access token'
+                );
+            }
+            // Check if user has exceeded maximum login attempts
+            if ($auth->getUser()->isLocked()) {
+                return $response->json(
+                    statusCode: 401, success: false,
+                    message: 'User account is currently locked out.'
+                );
+            }
+              // Check refresh token expiration
+              if ($auth->getToken()->accessTokenExpired()) {
+                return $response->json(
+                    statusCode: 401, success: false,
+                    message: 'Access token expired.'
+                );
+            }
+            // END Authorisation header
 
             $ecoleid = $request->getParam('ecoleid');
             $imageid = $request->getParam('imageid');
@@ -421,6 +550,50 @@ namespace ApiSchool\V1\Controller
                     message:'Database connection error'
                 );
             }
+            // Check Authorisation header
+            if (!$request->getHeaderLine('HTTP_AUTHORIZATION') 
+                || @strlen($request->getHeaderLine('HTTP_AUTHORIZATION')) < 1
+            ) {
+                (
+                    $request->getHeaderLine('HTTP_AUTHORIZATION') 
+                    ?: $response->setMessage('Access token is missing from the header')
+                );
+                (
+                    @strlen($request->getHeaderLine('HTTP_AUTHORIZATION')) < 1
+                    ?: $response->setMessage('Access token cannot be blank')
+                );
+                return $response->json(
+                    statusCode:401, success:false
+                );
+            }
+            
+            $accessToken = $request->getHeaderLine('HTTP_AUTHORIZATION');
+            $auth = new \ApiSchool\V1\Auth\Auth(token: $accessToken);
+
+            // Check Access Token
+            if (!$auth->isValid()) {
+                return $response->json(
+                    statusCode: 401,
+                    success: false,
+                    message: 'Invalid access token'
+                );
+            }
+            // Check if user has exceeded maximum login attempts
+            if ($auth->getUser()->isLocked()) {
+                return $response->json(
+                    statusCode: 401, success: false,
+                    message: 'User account is currently locked out.'
+                );
+            }
+              // Check refresh token expiration
+              if ($auth->getToken()->accessTokenExpired()) {
+                return $response->json(
+                    statusCode: 401, success: false,
+                    message: 'Access token expired.'
+                );
+            }
+            // END Authorisation header
+
             $ecoleid = $request->getParam('ecoleid');
             $imageid = $request->getParam('imageid');
             // Check Parameter School ID AND Image ID
@@ -550,6 +723,50 @@ namespace ApiSchool\V1\Controller
                     message:'Database connection error'
                 );
             }
+            // Check Authorisation header
+            if (!$request->getHeaderLine('HTTP_AUTHORIZATION') 
+                || @strlen($request->getHeaderLine('HTTP_AUTHORIZATION')) < 1
+            ) {
+                (
+                    $request->getHeaderLine('HTTP_AUTHORIZATION') 
+                    ?: $response->setMessage('Access token is missing from the header')
+                );
+                (
+                    @strlen($request->getHeaderLine('HTTP_AUTHORIZATION')) < 1
+                    ?: $response->setMessage('Access token cannot be blank')
+                );
+                return $response->json(
+                    statusCode:401, success:false
+                );
+            }
+            
+            $accessToken = $request->getHeaderLine('HTTP_AUTHORIZATION');
+            $auth = new \ApiSchool\V1\Auth\Auth(token: $accessToken);
+
+            // Check Access Token
+            if (!$auth->isValid()) {
+                return $response->json(
+                    statusCode: 401,
+                    success: false,
+                    message: 'Invalid access token'
+                );
+            }
+            // Check if user has exceeded maximum login attempts
+            if ($auth->getUser()->isLocked()) {
+                return $response->json(
+                    statusCode: 401, success: false,
+                    message: 'User account is currently locked out.'
+                );
+            }
+              // Check refresh token expiration
+              if ($auth->getToken()->accessTokenExpired()) {
+                return $response->json(
+                    statusCode: 401, success: false,
+                    message: 'Access token expired.'
+                );
+            }
+            // END Authorisation header
+
             $ecoleid = $request->getParam('ecoleid');
             $imageid = $request->getParam('imageid');
             // Check Parameter School ID AND Image ID
@@ -624,6 +841,50 @@ namespace ApiSchool\V1\Controller
                     message:'Database connection error'
                 );
             }
+            // Check Authorisation header
+            if (!$request->getHeaderLine('HTTP_AUTHORIZATION') 
+                || @strlen($request->getHeaderLine('HTTP_AUTHORIZATION')) < 1
+            ) {
+                (
+                    $request->getHeaderLine('HTTP_AUTHORIZATION') 
+                    ?: $response->setMessage('Access token is missing from the header')
+                );
+                (
+                    @strlen($request->getHeaderLine('HTTP_AUTHORIZATION')) < 1
+                    ?: $response->setMessage('Access token cannot be blank')
+                );
+                return $response->json(
+                    statusCode:401, success:false
+                );
+            }
+            
+            $accessToken = $request->getHeaderLine('HTTP_AUTHORIZATION');
+            $auth = new \ApiSchool\V1\Auth\Auth(token: $accessToken);
+
+            // Check Access Token
+            if (!$auth->isValid()) {
+                return $response->json(
+                    statusCode: 401,
+                    success: false,
+                    message: 'Invalid access token'
+                );
+            }
+            // Check if user has exceeded maximum login attempts
+            if ($auth->getUser()->isLocked()) {
+                return $response->json(
+                    statusCode: 401, success: false,
+                    message: 'User account is currently locked out.'
+                );
+            }
+              // Check refresh token expiration
+              if ($auth->getToken()->accessTokenExpired()) {
+                return $response->json(
+                    statusCode: 401, success: false,
+                    message: 'Access token expired.'
+                );
+            }
+            // END Authorisation header
+
             // Check Content-Type 
             if (!$request->isJsonContentType()) {
                 return $response->json(
@@ -643,8 +904,9 @@ namespace ApiSchool\V1\Controller
 
             // Check Parameter School ID AND Image ID
             if (
-                (is_null($ecoleid) || empty($ecoleid) || !is_numeric($ecoleid))
-                || (is_null($imageid) || empty($imageid) || !is_numeric($imageid))
+                (is_null($ecoleid) || empty($ecoleid) 
+                || !is_numeric($ecoleid)) || (is_null($imageid) 
+                || empty($imageid) || !is_numeric($imageid))
             ) {
                 return $response->json(
                     statusCode:400, success:false, 

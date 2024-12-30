@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 /**
  * File EcoleController
@@ -13,8 +13,9 @@
  * @license  See LICENSE file
  * @link     https://manzowa.com
  */
-namespace ApiSchool\V1\Controller
-{
+
+namespace ApiSchool\V1\Controller {
+
     use ApiSchool\V1\Database\Connexion;
     use ApiSchool\V1\Exception\EcoleException;
     use ApiSchool\V1\Model\Ecole;
@@ -23,7 +24,7 @@ namespace ApiSchool\V1\Controller
     use ApiSchool\V1\Model\Adresse;
     use ApiSchool\V1\Mapper\VendorMapper;
 
-    #[Route(path:'/api/v1')]
+    #[Route(path: '/api/v1')]
     class EcoleController
     {
         /**
@@ -36,23 +37,23 @@ namespace ApiSchool\V1\Controller
          *
          * @return mixed
          */
-        #[Route(path:'/ecoles', name:'ecoles.get')]
+        #[Route(path: '/ecoles', name: 'ecoles.get')]
         public function getAction(
-            \ApiSchool\V1\Http\Request $request, 
+            \ApiSchool\V1\Http\Request $request,
             \ApiSchool\V1\Http\Response $response
         ) {
             // Establish the connection Database
             $connexionRead = Connexion::read();
             // Check the Connection Database
-            if (!Connexion::is($connexionRead)){
+            if (!Connexion::is($connexionRead)) {
                 return $response->json(
-                    statusCode:500, success:false,
-                    message:'Database connection error'
+                    statusCode: 500,
+                    success: false,
+                    message: 'Database connection error'
                 );
             }
-                            
-            try 
-            {
+
+            try {
                 $mapper = new VendorMapper($connexionRead);
 
                 $retrievedRows = $mapper
@@ -60,27 +61,30 @@ namespace ApiSchool\V1\Controller
                     ->getResults();
 
                 $rowCounted = $mapper->rowCount();
-                
+
                 $ecoles = [];
-                for ($index=0; $index <$rowCounted ; $index++) { 
+                for ($index = 0; $index < $rowCounted; $index++) {
                     $row = $retrievedRows[$index];
                     $adresses = $mapper
                         ->adresseRetrieve(ecoleid: $row['id'])
                         ->executeQuery()
                         ->getResults();
-    
+
                     $images = $mapper
                         ->imageRetrieve(ecoleid: $row['id'])
                         ->executeQuery()
                         ->getResults();
-    
+
                     $ecole = new Ecole(
-                        id: $row['id'], nom: $row['nom'], 
-                        email: $row['email'], telephone: $row['telephone'],
-                        type: $row['type'], site: $row['site'], 
-                        maximage: $row['maximage'], 
+                        id: $row['id'],
+                        nom: $row['nom'],
+                        email: $row['email'],
+                        telephone: $row['telephone'],
+                        type: $row['type'],
+                        site: $row['site'],
+                        maximage: $row['maximage'],
                         adresses: $adresses ?? [],
-                        images: $images?? []
+                        images: $images ?? []
                     );
                     $ecoles[] = $ecole->toArray();
                 }
@@ -90,17 +94,20 @@ namespace ApiSchool\V1\Controller
                 $returnData['schools'] = $ecoles;
 
                 return $response->json(
-                    statusCode:200, success: true,
-                    toCache: true, data:  $returnData
+                    statusCode: 200,
+                    success: true,
+                    toCache: true,
+                    data: $returnData
                 );
             } catch (EcoleException | AdresseException $ex) {
                 return $response->json(
-                    statusCode:500, success:false, 
+                    statusCode: 500,
+                    success: false,
                     message: $ex->getMessage()
                 );
             }
         }
-        
+
         /**
          * Method postAction [POST]
          * 
@@ -111,163 +118,218 @@ namespace ApiSchool\V1\Controller
          * 
          * @return mixed
          */
-        #[Route(path:'/ecoles', name:'ecoles.post', method: 'POST')]
+        #[Route(path: '/ecoles', name: 'ecoles.post', method: 'POST')]
         public function postAction(
-            \ApiSchool\V1\Http\Request $request, 
+            \ApiSchool\V1\Http\Request $request,
             \ApiSchool\V1\Http\Response $response
         ) {
             // Establish the connection Database
             $connexionWrite = Connexion::write();
             // Check the Connection Database
-            if (!Connexion::is($connexionWrite)){
+            if (!Connexion::is($connexionWrite)) {
                 return $response->json(
-                    statusCode:500, success:false,
-                    message:'Database connection error'
+                    statusCode: 500,
+                    success: false,
+                    message: 'Database connection error'
                 );
             }
+            // Check Authorisation header
+            if (!$request->getHeaderLine('HTTP_AUTHORIZATION') 
+                || @strlen($request->getHeaderLine('HTTP_AUTHORIZATION')) < 1
+            ) {
+                (
+                    $request->getHeaderLine('HTTP_AUTHORIZATION') 
+                    ?: $response->setMessage('Access token is missing from the header')
+                );
+                (
+                    @strlen($request->getHeaderLine('HTTP_AUTHORIZATION')) < 1
+                    ?: $response->setMessage('Access token cannot be blank')
+                );
+                return $response->json(
+                    statusCode:401, success:false
+                );
+            }
+            
+            $accessToken = $request->getHeaderLine('HTTP_AUTHORIZATION');
+            $auth = new \ApiSchool\V1\Auth\Auth(token: $accessToken);
+
+            // Check Access Token
+            if (!$auth->isValid()) {
+                return $response->json(
+                    statusCode: 401,
+                    success: false,
+                    message: 'Invalid access token'
+                );
+            }
+            // Check if user has exceeded maximum login attempts
+            if ($auth->getUser()->isLocked()) {
+                return $response->json(
+                    statusCode: 401, success: false,
+                    message: 'User account is currently locked out.'
+                );
+            }
+              // Check refresh token expiration
+              if ($auth->getToken()->accessTokenExpired()) {
+                return $response->json(
+                    statusCode: 401, success: false,
+                    message: 'Access token expired.'
+                );
+            }
+            // END Authorisation header
 
             // Check Content-Type 
             if (!$request->isJsonContentType()) {
                 return $response->json(
-                    statusCode:400, success:false,
-                    message:'Content type header is not set to JSON'
+                    statusCode: 400,
+                    success: false,
+                    message: 'Content type header is not set to JSON'
                 );
             }
 
             // Check Body if it's Json
             if (!$body = $request->contentJsonDecode()) {
                 return $response->json(
-                    statusCode:400, success:false,
-                    message:'Request body is not valid JSON'
+                    statusCode: 400,
+                    success: false,
+                    message: 'Request body is not valid JSON'
                 );
             }
 
             // Check 
-            if (!isset($body->nom) || !isset($body->adresses) 
+            if (
+                !isset($body->nom) || !isset($body->adresses)
                 || (isset($body->adresses) && !is_array($body->adresses))
             ) {
-                (!isset($body->nom)? $response->setMessage('Nom field is mandatory and must be provider'): false);
+                (!isset($body->nom) ? $response->setMessage('Nom field is mandatory and must be provider') : false);
                 (!isset($body->adresses)
-                    ? $response->setMessage('Adresses field is mandatory and must be provider'): false
+                    ? $response->setMessage('Adresses field is mandatory and must be provider') : false
                 );
                 ((isset($body->adresses) && !is_array($body->adresses))
-                    ? $response->setMessage('Adresses field should be Array'): false
+                    ? $response->setMessage('Adresses field should be Array') : false
                 );
-                return $response->json(statusCode:400, success:false);
+                return $response->json(statusCode: 400, success: false);
             }
             $bodyAdresses = $body->adresses;
 
             if (count($bodyAdresses) == 0) {
-                ((count($bodyAdresses) == 0)? 
-                    $response->setMessage('The fields of Adresses is mandatory and must be provider'): false
+                ((count($bodyAdresses) == 0) ?
+                    $response->setMessage('The fields of Adresses is mandatory and must be provider') : false
                 );
-                return $response->json(statusCode:400, success:false);
+                return $response->json(statusCode: 400, success: false);
             } else {
-                for ($index = 0; $index < count($bodyAdresses); $index++) { 
+                for ($index = 0; $index < count($bodyAdresses); $index++) {
                     $bodyAdresse = $bodyAdresses[$index];
-                    if (!is_object($bodyAdresse)
-                        || ( is_object($bodyAdresse) && !isset($bodyAdresse->voie))
-                        || ( is_object($bodyAdresse) && !isset($bodyAdresse->quartier))
-                        || ( is_object($bodyAdresse) && !isset($bodyAdresse->commune))
-                        || ( is_object($bodyAdresse) && !isset($bodyAdresse->district))
-                        || ( is_object($bodyAdresse) && !isset($bodyAdresse->ville))
+                    if (
+                        !is_object($bodyAdresse)
+                        || (is_object($bodyAdresse) && !isset($bodyAdresse->voie))
+                        || (is_object($bodyAdresse) && !isset($bodyAdresse->quartier))
+                        || (is_object($bodyAdresse) && !isset($bodyAdresse->commune))
+                        || (is_object($bodyAdresse) && !isset($bodyAdresse->district))
+                        || (is_object($bodyAdresse) && !isset($bodyAdresse->ville))
                     ) {
-                        (!is_object($bodyAdresse) ? 
-                            $response->setMessage('The data in the Field Addresses must be objects'): false
+                        (!is_object($bodyAdresse) ?
+                            $response->setMessage('The data in the Field Addresses must be objects') : false
                         );
-                        ((is_object($bodyAdresse) && !isset($bodyAdresse->voie)) ? 
-                            $response->setMessage('Voie Adresses field  is mandatory and must be provider'): false
+                        ((is_object($bodyAdresse) && !isset($bodyAdresse->voie)) ?
+                            $response->setMessage('Voie Adresses field  is mandatory and must be provider') : false
                         );
-                        ((is_object($bodyAdresse) && !isset($bodyAdresse->quartier))? 
-                            $response->setMessage('Quartier Adresses field  is mandatory and must be provider'): false
+                        ((is_object($bodyAdresse) && !isset($bodyAdresse->quartier)) ?
+                            $response->setMessage('Quartier Adresses field  is mandatory and must be provider') : false
                         );
-                        ((is_object($bodyAdresse) && !isset($bodyAdresse->commune))? 
-                            $response->setMessage('Commune Adresses field  is mandatory and must be provider'): false
+                        ((is_object($bodyAdresse) && !isset($bodyAdresse->commune)) ?
+                            $response->setMessage('Commune Adresses field  is mandatory and must be provider') : false
                         );
-                        ((is_object($bodyAdresse) && !isset($bodyAdresse->district))? 
-                            $response->setMessage('District Adresses  field  is mandatory and must be provider'): false
+                        ((is_object($bodyAdresse) && !isset($bodyAdresse->district)) ?
+                            $response->setMessage('District Adresses  field  is mandatory and must be provider') : false
                         );
-                        ((is_object($bodyAdresse) && !isset($bodyAdresse->ville))? 
-                            $response->setMessage('Ville Adresses field  is mandatory and must be provider'): false
+                        ((is_object($bodyAdresse) && !isset($bodyAdresse->ville)) ?
+                            $response->setMessage('Ville Adresses field  is mandatory and must be provider') : false
                         );
-                        return $response->json(statusCode:400, success:false);
+                        return $response->json(statusCode: 400, success: false);
                     }
                 }
             }
 
-            try 
-            {
+            try {
                 $adressesArray = [];
-                for ($index = 0; $index < count($bodyAdresses); $index++) 
-                { 
+                for ($index = 0; $index < count($bodyAdresses); $index++) {
                     $bodyAdresse = $bodyAdresses[$index];
                     $voie = (
-                        isset($bodyAdresse->voie) 
+                        isset($bodyAdresse->voie)
                         && (!is_null($bodyAdresse->voie) && !empty($bodyAdresse->voie))
-                    ) ? $bodyAdresse->voie: NULL;
+                    ) ? $bodyAdresse->voie : NULL;
                     $quartier = (
-                        isset($bodyAdresse->quartier) 
+                        isset($bodyAdresse->quartier)
                         && (!is_null($bodyAdresse->quartier) && !empty($bodyAdresse->quartier))
-                    ) ? $bodyAdresse->quartier: NULL;
+                    ) ? $bodyAdresse->quartier : NULL;
                     $commune = (
-                        isset($bodyAdresse->commune) 
+                        isset($bodyAdresse->commune)
                         && (!is_null($bodyAdresse->commune) && !empty($bodyAdresse->commune))
-                    ) ? $bodyAdresse->commune: NULL;
+                    ) ? $bodyAdresse->commune : NULL;
                     $district = (
-                        isset($bodyAdresse->district) 
+                        isset($bodyAdresse->district)
                         && (!is_null($bodyAdresse->district) && !empty($bodyAdresse->district))
-                    ) ? $bodyAdresse->district: NULL;
+                    ) ? $bodyAdresse->district : NULL;
 
                     $ville = (
-                        isset($bodyAdresse->ville) 
+                        isset($bodyAdresse->ville)
                         && (!is_null($bodyAdresse->ville) && !empty($bodyAdresse->ville))
-                    ) ? $bodyAdresse->ville: NULL;
+                    ) ? $bodyAdresse->ville : NULL;
 
                     $reference = (
-                        isset($bodyAdresse->reference) 
+                        isset($bodyAdresse->reference)
                         && (!is_null($bodyAdresse->reference) && !empty($bodyAdresse->reference))
-                    ) ? $bodyAdresse->reference: NULL;
+                    ) ? $bodyAdresse->reference : NULL;
 
                     $adresse = new Adresse(
-                        id: NULL, voie: $voie, quartier: $quartier, 
-                        commune: $commune, district: $district, 
-                        ville: $ville, reference: $reference
+                        id: NULL,
+                        voie: $voie,
+                        quartier: $quartier,
+                        commune: $commune,
+                        district: $district,
+                        ville: $ville,
+                        reference: $reference
                     );
-                    $adressesArray[]= $adresse->toArray();
+                    $adressesArray[] = $adresse->toArray();
                 }
-                
+
                 $email = (
-                    isset($body->email) 
+                    isset($body->email)
                     && (!is_null($body->email) && !empty($body->email))
-                ) ? $body->email: NULL;
+                ) ? $body->email : NULL;
                 $telephone = (
-                    isset($body->telephone) 
+                    isset($body->telephone)
                     && (!is_null($body->telephone) && !empty($body->telephone))
-                ) ? $body->telephone: NULL;
+                ) ? $body->telephone : NULL;
                 $type = (
-                    isset($body->type) 
+                    isset($body->type)
                     && (!is_null($body->type) && !empty($body->type))
-                ) ? $body->type: NULL;
+                ) ? $body->type : NULL;
 
                 $site = (
-                    isset($body->site) 
+                    isset($body->site)
                     && (!is_null($body->site) && !empty($body->site))
-                ) ? $body->site: NULL;
+                ) ? $body->site : NULL;
 
                 $ecole = new Ecole(
-                    id: NULL, nom: $body->nom, email: $email,
-                    telephone: $telephone, type: $type,
-                    site: $site, adresses: $adressesArray
+                    id: NULL,
+                    nom: $body->nom,
+                    email: $email,
+                    telephone: $telephone,
+                    type: $type,
+                    site: $site,
+                    adresses: $adressesArray
                 );
 
-                $mapper = new VendorMapper($connexionWrite); 
+                $mapper = new VendorMapper($connexionWrite);
                 // Check school exist
                 $mapper->findEcoles(ecole: $ecole);
 
                 if ($mapper->rowCount() !== 0) {
                     return $response->json(
-                        statusCode: 400, success:false, 
-                        message:' School already exists'
+                        statusCode: 400,
+                        success: false,
+                        message: ' School already exists'
                     );
                 }
 
@@ -275,11 +337,12 @@ namespace ApiSchool\V1\Controller
                 $mapper
                     ->ecoleAdd($ecole)
                     ->executInsert();
-                
+
                 if ($mapper->rowCount() === 0) {
                     return $response->json(
-                        statusCode:500, success:false, 
-                        message:'Failed to create school'
+                        statusCode: 500,
+                        success: false,
+                        message: 'Failed to create school'
                     );
                 }
                 $ecoleid = (int) $mapper->lastInsertId();
@@ -297,8 +360,9 @@ namespace ApiSchool\V1\Controller
 
                 if ($rowCounted === 0) {
                     return $response->json(
-                        statusCode:500, success:false, 
-                        message:'Failed to retrieve school after creation'
+                        statusCode: 500,
+                        success: false,
+                        message: 'Failed to retrieve school after creation'
                     );
                 }
                 $adresses = $mapper
@@ -312,27 +376,31 @@ namespace ApiSchool\V1\Controller
                     ->getResults();
 
                 $news = new Ecole(
-                    id: $row['id'], nom: $row['nom'], 
-                    email: $row['email'], telephone: $row['telephone'],
-                    type: $row['type'], site: $row['site'], 
-                    maximage: $row['maximage'], 
+                    id: $row['id'],
+                    nom: $row['nom'],
+                    email: $row['email'],
+                    telephone: $row['telephone'],
+                    type: $row['type'],
+                    site: $row['site'],
+                    maximage: $row['maximage'],
                     adresses: $adresses ?? [],
-                    images: $images?? []
+                    images: $images ?? []
                 );
-                
+
                 $returnData = [];
                 $returnData['rows_inserted'] =  $rowCounted;
                 $returnData['schools'] = $news->toArray();
 
                 return $response->json(
-                    statusCode:200, success:true, 
+                    statusCode: 200,
+                    success: true,
                     data: $returnData
-                ); 
-
+                );
             } catch (EcoleException | AdresseException $e) {
                 return $response->json(
-                    statusCode:400, success:false, 
-                    message:$e->getMessage()
+                    statusCode: 400,
+                    success: false,
+                    message: $e->getMessage()
                 );
             }
         }
@@ -344,18 +412,19 @@ namespace ApiSchool\V1\Controller
          * 
          * @return void
          */
-        #[Route(path:'/ecoles/([0-9]+)', name:'ecoles.getOne')]
+        #[Route(path: '/ecoles/([0-9]+)', name: 'ecoles.getOne')]
         public function getOneAction(
-            \ApiSchool\V1\Http\Request $request, 
+            \ApiSchool\V1\Http\Request $request,
             \ApiSchool\V1\Http\Response $response
         ) {
             // Establish the connection Database
             $connexionRead = Connexion::read();
             // Check the Connection Database
-            if (!Connexion::is($connexionRead)){
+            if (!Connexion::is($connexionRead)) {
                 return $response->json(
-                    statusCode:500, success:false,
-                    message:'Database connection error'
+                    statusCode: 500,
+                    success: false,
+                    message: 'Database connection error'
                 );
             }
 
@@ -363,13 +432,13 @@ namespace ApiSchool\V1\Controller
             // Check Parameter School Id
             if (is_null($ecoleid) || empty($ecoleid) || !is_numeric($ecoleid)) {
                 return $response->json(
-                    statusCode:400, success:false,
-                    message:'School id cannot be blank or string. It\'s must be numeric'
+                    statusCode: 400,
+                    success: false,
+                    message: 'School id cannot be blank or string. It\'s must be numeric'
                 );
             }
 
-            try 
-            {
+            try {
                 $mapper = new VendorMapper($connexionRead);
                 $row = $mapper
                     ->findEcoles(id: $ecoleid)
@@ -380,8 +449,9 @@ namespace ApiSchool\V1\Controller
 
                 if ($mapper->rowCount() === 0) {
                     return $response->json(
-                        statusCode:500, success:false, 
-                        message:'School Not Found.'
+                        statusCode: 500,
+                        success: false,
+                        message: 'School Not Found.'
                     );
                 }
 
@@ -389,38 +459,43 @@ namespace ApiSchool\V1\Controller
                     ->adresseRetrieve(ecoleid: $row['id'])
                     ->executeQuery()
                     ->getResults();
-    
+
                 $images = $mapper
                     ->imageRetrieve(ecoleid: $row['id'])
                     ->executeQuery()
                     ->getResults();
 
                 $ecole = new Ecole(
-                    id: $row['id'], nom: $row['nom'], 
-                    email: $row['email'], telephone: $row['telephone'],
-                    type: $row['type'], site: $row['site'], 
-                    maximage: $row['maximage'], 
+                    id: $row['id'],
+                    nom: $row['nom'],
+                    email: $row['email'],
+                    telephone: $row['telephone'],
+                    type: $row['type'],
+                    site: $row['site'],
+                    maximage: $row['maximage'],
                     adresses: $adresses ?? [],
-                    images: $images?? []
+                    images: $images ?? []
                 );
 
                 $returnData = [];
                 $returnData['rows_returned'] = $rowCounted;
                 $returnData['school'] = $ecole->toArray();
-    
-                return $response->json(
-                    statusCode:200, success: true,
-                    toCache: true, data: $returnData
-                );
 
+                return $response->json(
+                    statusCode: 200,
+                    success: true,
+                    toCache: true,
+                    data: $returnData
+                );
             } catch (EcoleException | AdresseException $ex) {
                 return $response->json(
-                    statusCode:500, success:false, 
+                    statusCode: 500,
+                    success: false,
                     message: $ex->getMessage()
                 );
             }
         }
-        
+
         /**
          * Method putOneAction [PUT]
          *
@@ -429,81 +504,128 @@ namespace ApiSchool\V1\Controller
          * 
          * @return mixed
          */
-        #[Route(path:'/ecoles/([0-9]+)', name:'ecoles.putOne', method: 'PUT')]
+        #[Route(path: '/ecoles/([0-9]+)', name: 'ecoles.putOne', method: 'PUT')]
         public function putOneAction(
-            \ApiSchool\V1\Http\Request $request, 
+            \ApiSchool\V1\Http\Request $request,
             \ApiSchool\V1\Http\Response $response
-        ) 
-        {
+        ) {
             // Establish the connection Database
             $connexionWrite = Connexion::write();
             // Check the Connection Database
-            if (!Connexion::is($connexionWrite)){
+            if (!Connexion::is($connexionWrite)) {
                 return $response->json(
-                    statusCode:500, success:false,
-                    message:'Database connection error'
+                    statusCode: 500,
+                    success: false,
+                    message: 'Database connection error'
                 );
             }
+            // Check Authorisation header
+            if (!$request->getHeaderLine('HTTP_AUTHORIZATION') 
+                || @strlen($request->getHeaderLine('HTTP_AUTHORIZATION')) < 1
+            ) {
+                (
+                    $request->getHeaderLine('HTTP_AUTHORIZATION') 
+                    ?: $response->setMessage('Access token is missing from the header')
+                );
+                (
+                    @strlen($request->getHeaderLine('HTTP_AUTHORIZATION')) < 1
+                    ?: $response->setMessage('Access token cannot be blank')
+                );
+                return $response->json(
+                    statusCode:401, success:false
+                );
+            }
+            
+            $accessToken = $request->getHeaderLine('HTTP_AUTHORIZATION');
+            $auth = new \ApiSchool\V1\Auth\Auth(token: $accessToken);
+
+            // Check Access Token
+            if (!$auth->isValid()) {
+                return $response->json(
+                    statusCode: 401,
+                    success: false,
+                    message: 'Invalid access token'
+                );
+            }
+            // Check if user has exceeded maximum login attempts
+            if ($auth->getUser()->isLocked()) {
+                return $response->json(
+                    statusCode: 401, success: false,
+                    message: 'User account is currently locked out.'
+                );
+            }
+              // Check refresh token expiration
+              if ($auth->getToken()->accessTokenExpired()) {
+                return $response->json(
+                    statusCode: 401, success: false,
+                    message: 'Access token expired.'
+                );
+            }
+            // END Authorisation header
+
             // Check Content-Type 
             if (!$request->isJsonContentType()) {
                 return $response->json(
-                    statusCode:400, success:false,
-                    message:'Content type header is not set to JSON'
+                    statusCode: 400,
+                    success: false,
+                    message: 'Content type header is not set to JSON'
                 );
             }
             // Check Body if it's Json
             if (!$body = $request->contentJsonDecode()) {
                 return $response->json(
-                    statusCode:400, success:false,
-                    message:'Request body is not valid JSON'
+                    statusCode: 400,
+                    success: false,
+                    message: 'Request body is not valid JSON'
                 );
             }
             // Check 
             if (!isset($body->nom)) {
                 (
-                    !isset($body->nom)?
-                    $response->setMessage('Nom field is mandatory and must be provider'): false
+                    !isset($body->nom) ?
+                    $response->setMessage('Nom field is mandatory and must be provider') : false
                 );
                 return $response->json(
-                    statusCode:400, 
-                    success:false
+                    statusCode: 400,
+                    success: false
                 );
             }
-    
+
             // Prepare Data
-            try 
-            {
+            try {
                 $email = (
-                    isset($body->email) 
+                    isset($body->email)
                     && (!is_null($body->email) && !empty($body->email))
-                ) ? $body->email: NULL;
+                ) ? $body->email : NULL;
                 $telephone = (
-                    isset($body->telephone) 
+                    isset($body->telephone)
                     && (!is_null($body->telephone) && !empty($body->telephone))
-                ) ? $body->telephone: NULL;
+                ) ? $body->telephone : NULL;
                 $type = (
-                    isset($body->type) 
+                    isset($body->type)
                     && (!is_null($body->type) && !empty($body->type))
-                ) ? $body->type: NULL;
+                ) ? $body->type : NULL;
 
                 $site = (
-                    isset($body->site) 
+                    isset($body->site)
                     && (!is_null($body->site) && !empty($body->site))
-                ) ? $body->site: NULL;
+                ) ? $body->site : NULL;
 
                 $ecoleid = (int) $request->getParam('ecoleid');
                 // Check Parameter School ID
                 if (is_null($ecoleid) || empty($ecoleid) || !is_numeric($ecoleid)) {
                     return $response->json(
-                        statusCode:400, success:false,
-                        message:'School id cannot be blank or string. It\'s must be numeric'
+                        statusCode: 400,
+                        success: false,
+                        message: 'School id cannot be blank or string. It\'s must be numeric'
                     );
                 }
 
                 $ecole = new Ecole(
-                    id: $ecoleid, nom: $body->nom, 
+                    id: $ecoleid,
+                    nom: $body->nom,
                     email: $email,
-                    telephone: $telephone, 
+                    telephone: $telephone,
                     type: $type,
                     site: $site
                 );
@@ -524,8 +646,9 @@ namespace ApiSchool\V1\Controller
 
                     if ($mapper->rowCount() === 0) {
                         return $response->json(
-                            statusCode:500, success:false, 
-                            message:'Failed to update, school not exist or create new  school'
+                            statusCode: 500,
+                            success: false,
+                            message: 'Failed to update, school not exist or create new  school'
                         );
                     }
                     $ecoleid = (int) $mapper->lastInsertId();
@@ -536,51 +659,56 @@ namespace ApiSchool\V1\Controller
 
                     if ($mapper->rowCount() === 0) {
                         return $response->json(
-                            statusCode:500, success:false, 
-                            message:'Failed to retrieve school after creation'
+                            statusCode: 500,
+                            success: false,
+                            message: 'Failed to retrieve school after creation'
                         );
                     }
                     $adresses = $mapper
                         ->adresseRetrieve(ecoleid: $row['id'])
                         ->executeQuery()
                         ->getResults();
-    
+
                     $images = $mapper
                         ->imageRetrieve(ecoleid: $row['id'])
                         ->executeQuery()
                         ->getResults();
 
                     $ecole = new Ecole(
-                        id: $row['id'], nom: $row['nom'], 
-                        email: $row['email'], telephone: $row['telephone'],
-                        type: $row['type'], site: $row['site'], 
-                        maximage: $row['maximage'], 
+                        id: $row['id'],
+                        nom: $row['nom'],
+                        email: $row['email'],
+                        telephone: $row['telephone'],
+                        type: $row['type'],
+                        site: $row['site'],
+                        maximage: $row['maximage'],
                         adresses: $adresses ?? [],
-                        images: $images?? []
+                        images: $images ?? []
                     );
 
                     $returnData = [];
                     $returnData['rows_returned'] = $rowCounted;
                     $returnData['school'] = $ecole->toArray();
-        
+
                     return $response->json(
-                        statusCode:200, success: true,
-                        toCache: true, data: $returnData
+                        statusCode: 200,
+                        success: true,
+                        toCache: true,
+                        data: $returnData
                     );
-                    
                 }
                 // Retrive school by ID ecoleState
                 $ecoleState = Ecole::fromState(data: $row);
 
                 // Prepare Data to Update
-                (!is_null($ecole->getNom())? $ecoleState->setNom($ecole->getNom()): false );
-                (!is_null($ecole->getEmail())? $ecoleState->setEmail($ecole->getEmail()): false);
+                (!is_null($ecole->getNom()) ? $ecoleState->setNom($ecole->getNom()) : false);
+                (!is_null($ecole->getEmail()) ? $ecoleState->setEmail($ecole->getEmail()) : false);
                 (
                     !is_null($ecole->getTelephone())
-                    ? $ecoleState->setTelephone($ecole->getTelephone()): false 
+                    ? $ecoleState->setTelephone($ecole->getTelephone()) : false
                 );
-                (!is_null($ecole->getType())?$ecoleState->setType($ecole->getType()): false);
-                (!is_null($ecole->getSite())? $ecoleState->setSite($ecole->getSite()): false);
+                (!is_null($ecole->getType()) ? $ecoleState->setType($ecole->getType()) : false);
+                (!is_null($ecole->getSite()) ? $ecoleState->setSite($ecole->getSite()) : false);
 
                 // Prepare Data to Update
                 $mapper
@@ -589,8 +717,9 @@ namespace ApiSchool\V1\Controller
 
                 if ($mapper->rowCount() === 0) {
                     return $response->json(
-                        statusCode:404, success:false, 
-                        message:'School not updated.'
+                        statusCode: 404,
+                        success: false,
+                        message: 'School not updated.'
                     );
                 }
                 // Fetch after Update
@@ -599,11 +728,12 @@ namespace ApiSchool\V1\Controller
                     ->getResults();
                 $rowCounted = $mapper->rowCount();
                 $row = current($row);
-            
+
                 if ($rowCounted === 0) {
                     return $response->json(
-                        statusCode:404, success:false, 
-                        message:'No school found after update.'
+                        statusCode: 404,
+                        success: false,
+                        message: 'No school found after update.'
                     );
                 }
                 $stateFetched = Ecole::fromState($row);
@@ -624,15 +754,16 @@ namespace ApiSchool\V1\Controller
                 $returnData['school'] = $stateFetched->toArray();
 
                 return $response->json(
-                    statusCode:200, success:true,
+                    statusCode: 200,
+                    success: true,
                     message: 'School Updated',
                     data: $returnData
                 );
-                    
             } catch (EcoleException | AdresseException $e) {
                 return $response->json(
-                    statusCode:400, success:false, 
-                    message:$e->getMessage()
+                    statusCode: 400,
+                    success: false,
+                    message: $e->getMessage()
                 );
             }
         }
@@ -644,82 +775,134 @@ namespace ApiSchool\V1\Controller
          * 
          * @return mixed
          */
-        #[Route(path:'/ecoles/([0-9]+)', name:'ecoles.patchOne', method: 'PATCH')]
+        #[Route(path: '/ecoles/([0-9]+)', name: 'ecoles.patchOne', method: 'PATCH')]
         public function patchOneAction(
-            \ApiSchool\V1\Http\Request $request, 
+            \ApiSchool\V1\Http\Request $request,
             \ApiSchool\V1\Http\Response $response
         ) {
             // Establish the connection Database
             $connexionWrite = Connexion::write();
             // Check the Connection Database
-            if (!Connexion::is($connexionWrite)){
+            if (!Connexion::is($connexionWrite)) {
                 return $response->json(
-                    statusCode:500, success:false,
-                    message:'Database connection error'
+                    statusCode: 500,
+                    success: false,
+                    message: 'Database connection error'
                 );
             }
+            // Check Authorisation header
+            if (!$request->getHeaderLine('HTTP_AUTHORIZATION') 
+                || @strlen($request->getHeaderLine('HTTP_AUTHORIZATION')) < 1
+            ) {
+                (
+                    $request->getHeaderLine('HTTP_AUTHORIZATION') 
+                    ?: $response->setMessage('Access token is missing from the header')
+                );
+                (
+                    @strlen($request->getHeaderLine('HTTP_AUTHORIZATION')) < 1
+                    ?: $response->setMessage('Access token cannot be blank')
+                );
+                return $response->json(
+                    statusCode:401, success:false
+                );
+            }
+            
+            $accessToken = $request->getHeaderLine('HTTP_AUTHORIZATION');
+            $auth = new \ApiSchool\V1\Auth\Auth(token: $accessToken);
+
+            // Check Access Token
+            if (!$auth->isValid()) {
+                return $response->json(
+                    statusCode: 401,
+                    success: false,
+                    message: 'Invalid access token'
+                );
+            }
+            // Check if user has exceeded maximum login attempts
+            if ($auth->getUser()->isLocked()) {
+                return $response->json(
+                    statusCode: 401, success: false,
+                    message: 'User account is currently locked out.'
+                );
+            }
+              // Check refresh token expiration
+              if ($auth->getToken()->accessTokenExpired()) {
+                return $response->json(
+                    statusCode: 401, success: false,
+                    message: 'Access token expired.'
+                );
+            }
+            // END Authorisation header
 
             // Check Content-Type 
             if (!$request->isJsonContentType()) {
                 return $response->json(
-                    statusCode:400, success:false,
-                    message:'Content type header is not set to JSON'
+                    statusCode: 400,
+                    success: false,
+                    message: 'Content type header is not set to JSON'
                 );
             }
 
             // Check Body if it's Json
             if (!$body = $request->contentJsonDecode()) {
                 return $response->json(
-                    statusCode:400, success:false,
-                    message:'Request body is not valid JSON'
+                    statusCode: 400,
+                    success: false,
+                    message: 'Request body is not valid JSON'
                 );
             }
 
             // Check 
-            if (!isset($body->nom)  && !isset($body->email) 
-                && !isset($body->telephone) && !isset($body->type) 
-                && !isset($body->site) 
+            if (
+                !isset($body->nom)  && !isset($body->email)
+                && !isset($body->telephone) && !isset($body->type)
+                && !isset($body->site)
             ) {
                 return $response->json(
-                    statusCode:400, success:false,
+                    statusCode: 400,
+                    success: false,
                     message: "No fields to update are provided."
                 );
             }
             try {
                 $nom = (
-                    isset($body->nom) 
+                    isset($body->nom)
                     && (!is_null($body->nom) && !empty($body->nom))
-                ) ? $body->nom: NULL;
+                ) ? $body->nom : NULL;
                 $email = (
-                    isset($body->email) 
+                    isset($body->email)
                     && (!is_null($body->email) && !empty($body->email))
-                ) ? $body->email: NULL;
+                ) ? $body->email : NULL;
                 $telephone = (
-                    isset($body->telephone) 
+                    isset($body->telephone)
                     && (!is_null($body->telephone) && !empty($body->telephone))
-                ) ? $body->telephone: NULL;
+                ) ? $body->telephone : NULL;
                 $type = (
-                    isset($body->type) 
+                    isset($body->type)
                     && (!is_null($body->type) && !empty($body->type))
-                ) ? $body->type: NULL;
+                ) ? $body->type : NULL;
 
                 $site = (
-                    isset($body->site) 
+                    isset($body->site)
                     && (!is_null($body->site) && !empty($body->site))
-                ) ? $body->site: NULL;
+                ) ? $body->site : NULL;
 
                 $ecoleid = (int) $request->getParam('ecoleid');
                 // Check Paramater School ID
                 if (is_null($ecoleid) || empty($ecoleid) || !is_numeric($ecoleid)) {
                     return $response->json(
-                        statusCode:400, success:false,
-                        message:'School id cannot be blank or string. It\'s must be numeric'
+                        statusCode: 400,
+                        success: false,
+                        message: 'School id cannot be blank or string. It\'s must be numeric'
                     );
                 }
 
                 $ecole = new Ecole(
-                    id: $ecoleid, nom: $nom, email: $email,
-                    telephone: $telephone, type: $type,
+                    id: $ecoleid,
+                    nom: $nom,
+                    email: $email,
+                    telephone: $telephone,
+                    type: $type,
                     site: $site
                 );
                 $mapper = new VendorMapper($connexionWrite);
@@ -732,8 +915,9 @@ namespace ApiSchool\V1\Controller
 
                 if ($rowCounted === 0) {
                     return $response->json(
-                        statusCode:404, success:false, 
-                        message:'No school Found to update.'
+                        statusCode: 404,
+                        success: false,
+                        message: 'No school Found to update.'
                     );
                 }
                 $stateFetched = Ecole::fromState($row);
@@ -750,22 +934,23 @@ namespace ApiSchool\V1\Controller
                 $stateFetched->setImages(images: $images);
 
                 // Prepare Data to Update
-                (!is_null($ecole->getNom())?$stateFetched->setNom($ecole->getNom()): false );
-                (!is_null($ecole->getEmail())?$stateFetched->setEmail($ecole->getEmail()): false);
+                (!is_null($ecole->getNom()) ? $stateFetched->setNom($ecole->getNom()) : false);
+                (!is_null($ecole->getEmail()) ? $stateFetched->setEmail($ecole->getEmail()) : false);
                 (
                     !is_null($ecole->getTelephone())
-                    ?$stateFetched->setTelephone($ecole->getTelephone()): false 
+                    ? $stateFetched->setTelephone($ecole->getTelephone()) : false
                 );
-                (!is_null($ecole->getType())?$stateFetched->setType($ecole->getType()): false);
-                (!is_null($ecole->getSite())?$stateFetched->setSite($ecole->getSite()): false);
+                (!is_null($ecole->getType()) ? $stateFetched->setType($ecole->getType()) : false);
+                (!is_null($ecole->getSite()) ? $stateFetched->setSite($ecole->getSite()) : false);
 
                 $mapper->ecoleUpdate(ecole: $stateFetched)
-                    ->executeUpdate();  
+                    ->executeUpdate();
 
                 if ($mapper->rowCount() === 0) {
                     return $response->json(
-                        statusCode:404, success:false, 
-                        message:'School not updated.'
+                        statusCode: 404,
+                        success: false,
+                        message: 'School not updated.'
                     );
                 }
 
@@ -778,8 +963,9 @@ namespace ApiSchool\V1\Controller
                 // Fetch after Update
                 if ($mapper->rowCount() === 0) {
                     return $response->json(
-                        statusCode:404, success:false, 
-                        message:'No school found after update.'
+                        statusCode: 404,
+                        success: false,
+                        message: 'No school found after update.'
                     );
                 }
                 $stateFetched = Ecole::fromState($row);
@@ -800,15 +986,16 @@ namespace ApiSchool\V1\Controller
                 $returnData['school'] =  $stateFetched->toArray();
 
                 return $response->json(
-                    statusCode:200, success:true,
+                    statusCode: 200,
+                    success: true,
                     message: 'School Updated',
                     data: $returnData
-                ); 
-            
+                );
             } catch (EcoleException | AdresseException $e) {
                 return $response->json(
-                    statusCode:400, success:false, 
-                    message:$e->getMessage()
+                    statusCode: 400,
+                    success: false,
+                    message: $e->getMessage()
                 );
             }
         }
@@ -820,26 +1007,72 @@ namespace ApiSchool\V1\Controller
          * 
          * @return mixed
          */
-        #[Route(path:'/ecoles/([0-9]+)', name:'ecoles.deleteOne', method: 'DELETE')]
+        #[Route(path: '/ecoles/([0-9]+)', name: 'ecoles.deleteOne', method: 'DELETE')]
         public function deleteOneAction(
-            \ApiSchool\V1\Http\Request $request, 
+            \ApiSchool\V1\Http\Request $request,
             \ApiSchool\V1\Http\Response $response
         ) {
             // Establish the connection Database
             $connexionWrite = Connexion::write();
             // Check the Connection Database
-            if (!Connexion::is($connexionWrite)){
+            if (!Connexion::is($connexionWrite)) {
                 return $response->json(
-                    statusCode:500, success:false,
-                    message:'Database Connection Error'
+                    statusCode: 500,
+                    success: false,
+                    message: 'Database Connection Error'
                 );
             }
+            // Check Authorisation header
+            if (!$request->getHeaderLine('HTTP_AUTHORIZATION') 
+                || @strlen($request->getHeaderLine('HTTP_AUTHORIZATION')) < 1
+            ) {
+                (
+                    $request->getHeaderLine('HTTP_AUTHORIZATION') 
+                    ?: $response->setMessage('Access token is missing from the header')
+                );
+                (
+                    @strlen($request->getHeaderLine('HTTP_AUTHORIZATION')) < 1
+                    ?: $response->setMessage('Access token cannot be blank')
+                );
+                return $response->json(
+                    statusCode:401, success:false
+                );
+            }
+            
+            $accessToken = $request->getHeaderLine('HTTP_AUTHORIZATION');
+            $auth = new \ApiSchool\V1\Auth\Auth(token: $accessToken);
+
+            // Check Access Token
+            if (!$auth->isValid()) {
+                return $response->json(
+                    statusCode: 401,
+                    success: false,
+                    message: 'Invalid access token'
+                );
+            }
+            // Check if user has exceeded maximum login attempts
+            if ($auth->getUser()->isLocked()) {
+                return $response->json(
+                    statusCode: 401, success: false,
+                    message: 'User account is currently locked out.'
+                );
+            }
+              // Check refresh token expiration
+              if ($auth->getToken()->accessTokenExpired()) {
+                return $response->json(
+                    statusCode: 401, success: false,
+                    message: 'Access token expired.'
+                );
+            }
+            // END Authorisation header
+
             $ecoleid = (int) $request->getParam('ecoleid');
             // Check Parameter School ID
             if (is_null($ecoleid) || empty($ecoleid) || !is_numeric($ecoleid)) {
                 return $response->json(
-                    statusCode:400, success:false,
-                    message:'School id cannot be blank or string. It\'s must be numeric'
+                    statusCode: 400,
+                    success: false,
+                    message: 'School id cannot be blank or string. It\'s must be numeric'
                 );
             }
 
@@ -852,21 +1085,24 @@ namespace ApiSchool\V1\Controller
 
                 if ($rowCounted === 0) {
                     return $response->json(
-                        statusCode:404, success:false, 
-                        message:'School not found for to delete.'
+                        statusCode: 404,
+                        success: false,
+                        message: 'School not found for to delete.'
                     );
                 }
                 $returnData = [];
                 $returnData['rows_deleted'] = $rowCounted;
 
                 return $response->json(
-                    statusCode:200, success: true, 
+                    statusCode: 200,
+                    success: true,
                     message: "School $ecoleid deleted"
                 );
             } catch (EcoleException | AdresseException $e) {
                 return $response->json(
-                    statusCode:400, success:false, 
-                    message:$e->getMessage()
+                    statusCode: 400,
+                    success: false,
+                    message: $e->getMessage()
                 );
             }
         }
@@ -878,32 +1114,76 @@ namespace ApiSchool\V1\Controller
          * 
          * @return mixed
          */
-        #[Route(path:'/ecoles/page/([0-9]+)', name:'ecoles.getPerPage')]
+        #[Route(path: '/ecoles/page/([0-9]+)', name: 'ecoles.getPerPage')]
         public function getPageAction(
-            \ApiSchool\V1\Http\Request $request, 
+            \ApiSchool\V1\Http\Request $request,
             \ApiSchool\V1\Http\Response $response
         ) {
             // Establish the connection Database
             $connexionRead = Connexion::read();
-             // Check the Connection Database
-             if (!Connexion::is($connexionRead)){
+            // Check the Connection Database
+            if (!Connexion::is($connexionRead)) {
                 return $response->json(
-                    statusCode:500, success:false,
-                    message:'Database connection error'
+                    statusCode: 500,
+                    success: false,
+                    message: 'Database connection error'
                 );
-             }
- 
+            }
+            // Check Authorisation header
+            if (!$request->getHeaderLine('HTTP_AUTHORIZATION') 
+                || @strlen($request->getHeaderLine('HTTP_AUTHORIZATION')) < 1
+            ) {
+                (
+                    $request->getHeaderLine('HTTP_AUTHORIZATION') 
+                    ?: $response->setMessage('Access token is missing from the header')
+                );
+                (
+                    @strlen($request->getHeaderLine('HTTP_AUTHORIZATION')) < 1
+                    ?: $response->setMessage('Access token cannot be blank')
+                );
+                return $response->json(
+                    statusCode:401, success:false
+                );
+            }
+            
+            $accessToken = $request->getHeaderLine('HTTP_AUTHORIZATION');
+            $auth = new \ApiSchool\V1\Auth\Auth(token: $accessToken);
+
+            // Check Access Token
+            if (!$auth->isValid()) {
+                return $response->json(
+                    statusCode: 401,
+                    success: false,
+                    message: 'Invalid access token'
+                );
+            }
+            // Check if user has exceeded maximum login attempts
+            if ($auth->getUser()->isLocked()) {
+                return $response->json(
+                    statusCode: 401, success: false,
+                    message: 'User account is currently locked out.'
+                );
+            }
+              // Check refresh token expiration
+              if ($auth->getToken()->accessTokenExpired()) {
+                return $response->json(
+                    statusCode: 401, success: false,
+                    message: 'Access token expired.'
+                );
+            }
+            // END Authorisation header
+
             $page = $request->getParam('page');
             // Check Parameter Page
             if (is_null($page) || !is_numeric($page)) {
                 return $response->json(
-                    statusCode:400, success:false,
-                    message:'Page number cannot be blank or string. It\'s must be numeric'
+                    statusCode: 400,
+                    success: false,
+                    message: 'Page number cannot be blank or string. It\'s must be numeric'
                 );
             }
-           
-            try 
-            {
+
+            try {
                 $mapper = new VendorMapper($connexionRead);
 
                 $counter = $mapper->ecoleCounter();
@@ -912,11 +1192,12 @@ namespace ApiSchool\V1\Controller
                 $ecolesCount  = intval($counter);
                 $numOfPages   = intval(ceil($ecolesCount / $limitPerPage));
                 // First Page
-                if ($numOfPages == 0)  $numOfPages = 1; 
-                if ( $numOfPages < $page || 0 == $page ) {
+                if ($numOfPages == 0)  $numOfPages = 1;
+                if ($numOfPages < $page || 0 == $page) {
                     return $response->json(
-                        statusCode:404, success:false,
-                        message:'Page not found.'
+                        statusCode: 404,
+                        success: false,
+                        message: 'Page not found.'
                     );
                 }
                 // Offset Page
@@ -926,13 +1207,13 @@ namespace ApiSchool\V1\Controller
                     ->findEcolesByLimitAndOffset(limit: $limitPerPage, offset: $offset)
                     ->executeQuery()
                     ->getResults();
-                    
+
                 $rowCounted = $mapper->rowCount();
                 $stateRows = [];
-                
+
                 if (is_array($rows) && count($rows) > 0) {
-                    for ($index=0; $index < count($rows); $index++) { 
-                       $row = $rows[$index];
+                    for ($index = 0; $index < count($rows); $index++) {
+                        $row = $rows[$index];
 
                         $stateFetched = Ecole::fromState($row);
                         $adresses = $mapper
@@ -949,7 +1230,7 @@ namespace ApiSchool\V1\Controller
 
                         $stateRows[] = $stateFetched->toArray();
                     }
-                }              
+                }
 
                 $returnData = [];
                 $returnData['rows_returned'] = $rowCounted;
@@ -958,17 +1239,18 @@ namespace ApiSchool\V1\Controller
                 $returnData['has_next_page'] =  ($page < $numOfPages) ? true : false;
                 $returnData['has_privious_page'] =  ($page > 1) ? true : false;
                 $returnData['schools'] = $stateRows;
-    
-                return $response->json(
-                    statusCode:200, success:true, toCache: true,
-                    data: $returnData
-                ); 
-    
 
+                return $response->json(
+                    statusCode: 200,
+                    success: true,
+                    toCache: true,
+                    data: $returnData
+                );
             } catch (EcoleException | AdresseException $e) {
                 return $response->json(
-                    statusCode:400, success:false, 
-                    message:$e->getMessage()
+                    statusCode: 400,
+                    success: false,
+                    message: $e->getMessage()
                 );
             }
         }

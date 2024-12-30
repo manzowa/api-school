@@ -18,16 +18,16 @@ namespace ApiSchool\V1\Model {
 
     use \DateTime;
 
-    final class Session
+    final class Token
     {
         public function __construct
         (
             protected readonly ?int $id,
             protected ?int $userid,
             protected ?string $accessToken,
-            protected ?DateTime $accessTokenExpiry,
+            protected ?string $accessTokenExpiry,
             protected ?string $refreshToken,
-            protected ?DateTime $refreshTokenExpiry
+            protected ?string $refreshTokenExpiry
         )
         {}
 
@@ -62,9 +62,9 @@ namespace ApiSchool\V1\Model {
         /**
          * Get the value of accessTokenExpiry
          *
-         * @return ?DateTime
+         * @return ?string
          */
-        public function getAccessTokenExpiry(): ?DateTime
+        public function getAccessTokenExpiry(): ?string
         {
             return $this->accessTokenExpiry;
         }
@@ -82,9 +82,9 @@ namespace ApiSchool\V1\Model {
         /**
          * Get the value of refreshTokenExpiry
          *
-         * @return ?DateTime
+         * @return ?string
          */
-        public function getRefreshTokenExpiry(): ?DateTime
+        public function getRefreshTokenExpiry(): ?string
         {
             return $this->refreshTokenExpiry;
         }
@@ -127,11 +127,11 @@ namespace ApiSchool\V1\Model {
         /**
          * Set the value of accessTokenExpiry
          *
-         * @param ?DateTime $accessTokenExpiry
+         * @param ?string $accessTokenExpiry
          *
          * @return self
          */
-        public function setAccessTokenExpiry(?DateTime $accessTokenExpiry): self
+        public function setAccessTokenExpiry(?string $accessTokenExpiry): self
         {
             $this->accessTokenExpiry = $accessTokenExpiry;
             return $this;
@@ -153,14 +153,47 @@ namespace ApiSchool\V1\Model {
         /**
          * Set the value of refreshTokenExpiry
          *
-         * @param ?DateTime $refreshTokenExpiry
+         * @param ?string $refreshTokenExpiry
          *
          * @return self
          */
-        public function setRefreshTokenExpiry(?DateTime $refreshTokenExpiry): self
+        public function setRefreshTokenExpiry(?string $refreshTokenExpiry): self
         {
             $this->refreshTokenExpiry = $refreshTokenExpiry;
             return $this;
+        }
+        public function toArray(): array
+        {
+            return [
+                'id'                 => $this->getId(),
+                'userid'             => $this->getUserid(),
+                'accessToken'        => $this->getAccessToken(),
+                'accessTokenExpiry'  => $this->getAccessTokenExpiry(),
+                'refreshToken'       => $this->getRefreshToken(),
+                'refreshTokenExpiry' => $this->getRefreshTokenExpiry(),
+            ];
+        }
+
+        public static function fromState(array $data = [])
+        {
+            return new static(
+                id: $data['id'] ?? null,
+                userid: $data['userid'] ?? null,
+                accessToken: $data['accessToken'] ?? null,
+                accessTokenExpiry: $data['accessTokenExpiry']?? null,
+                refreshToken: $data['refreshToken'] ?? null,
+                refreshTokenExpiry: $data['refreshTokenExpiry'] ?? null
+            );
+        }
+
+        public function isRefreshtokenexpiry(): bool {
+            return (strtotime($this->getRefreshTokenExpiry()) < time());
+        }
+        public function accessTokenExpired() : bool {
+            return strtotime($this->getAccessTokenExpiry()) < time();
+        }
+        public function refreshTokenExpired() : bool {
+            return strtotime($this->getRefreshTokenExpiry()) < time();
         }
     }
 }
