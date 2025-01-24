@@ -1,6 +1,6 @@
 <?php
 
-namespace App\SchoolManager;
+namespace ApiSchool\V1;
 
 use \Dotenv\Dotenv;
 

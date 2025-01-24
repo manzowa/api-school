@@ -21,5 +21,16 @@ return  [
     ApiSchool\V1\Controller\TokenController::class,
     // ApiSchool\V1\Controller\ResetPasswordController::class,
     // ApiSchool\V1\Controller\VerificationController::class,
-
+    // ApiSchool\V1\Controller\UserVerificationController::class,
+    // ApiSchool\V1\Controller\UserPasswordController::class,
+    // ApiSchool\V1\Controller\UserEmailController::class,
+    // ApiSchool\V1\Controller\UserPhoneController::class,
+    // ApiSchool\V1\Controller\UserAddressController::class,
+    // ApiSchool\V1\Controller\UserPasswordResetController::class,
+    // ApiSchool\V1\Controller\UserVerificationResetController::class,
+    // ApiSchool\V1\Controller\UserEmailResetController::class,
+    // ApiSchool\V1\Controller\UserPhoneResetController::class,
+    // ApiSchool\V1\Controller\UserAddressResetController::class,
+    // ApiSchool\V1\Controller\UserEmailVerificationController::class,
+    ApiSchool\V1\Controller\ArticleController::class,
 ];

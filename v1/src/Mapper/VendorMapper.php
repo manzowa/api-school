@@ -25,6 +25,7 @@ class VendorMapper extends Mapper
     use \ApiSchool\V1\Mapper\Trait\ImageTrait;
     use \ApiSchool\V1\Mapper\Trait\SessionTrait;
     use \ApiSchool\V1\Mapper\Trait\UserTrait;
+    use \ApiSchool\V1\Mapper\Trait\ArticleTrait;
 
     public function findEcoles(?int $id= null, \ApiSchool\V1\Model\Ecole $ecole= null): self
     {

@@ -15,10 +15,7 @@
  */
 namespace ApiSchool\V1\Mapper;
 
-use \Exception;
-use Iterator;
 use \PDOStatement;
-use \TypeError;
 
 abstract class Mapper 
 {
@@ -220,7 +217,7 @@ abstract class Mapper
                 $this->rollBack();
             }
             $this->setResults(false);
-            \App\SchoolManager\loggerException($e);
+            \ApiSchool\V1\loggerException($e);
         }
         return $this;
     }
@@ -236,7 +233,7 @@ abstract class Mapper
             $this->closeCursor();
         } catch (\PDOException $e) {
             $this->setResults(false);
-            \App\SchoolManager\loggerException($e);
+            \ApiSchool\V1\loggerException($e);
         }
         return $this;
     }
@@ -249,7 +246,7 @@ abstract class Mapper
                 $this->rollBack();
             }
             $this->setResults(false);
-            \App\SchoolManager\loggerException($e);
+            \ApiSchool\V1\loggerException($e);
         }
         return $this;
     }
@@ -262,7 +259,7 @@ abstract class Mapper
                 $this->rollBack();
             }
             $this->setResults(false);
-            \App\SchoolManager\loggerException($e);
+            \ApiSchool\V1\loggerException($e);
         }
         return $this;
     }
@@ -274,7 +271,7 @@ abstract class Mapper
             if ($this->inTransaction()) {
                 $this->rollBack();
             }
-            \App\SchoolManager\loggerException($e);
+            \ApiSchool\V1\loggerException($e);
             $this->setResults(false);
         }
         return $this;

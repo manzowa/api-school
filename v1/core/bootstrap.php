@@ -13,9 +13,9 @@
  * @license  See LICENSE file
  * @link     https://manzowa.com
  */
-namespace App\SchoolManager;
+namespace ApiSchool\V1;
 
-if (!function_exists("App\SchoolManager\logger")) {
+if (!function_exists("ApiSchool\V1\logger")) {
     /**
      * Function logger
      * 
@@ -36,7 +36,7 @@ if (!function_exists("App\SchoolManager\logger")) {
     }
 }
 
-if (!function_exists("App\SchoolManager\loggerException")) {
+if (!function_exists("ApiSchool\V1\loggerException")) {
     /**
      * Function loggerException
      * 
