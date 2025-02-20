@@ -50,6 +50,7 @@ namespace ApiSchool\V1\Controller
                    message:'Database connection error'
                );
             }
+            /*
             // Check Authorisation header
             if (!$request->getHeaderLine('HTTP_AUTHORIZATION') 
                 || @strlen($request->getHeaderLine('HTTP_AUTHORIZATION')) < 1
@@ -91,7 +92,7 @@ namespace ApiSchool\V1\Controller
                     statusCode: 401, success: false,
                     message: 'Access token expired.'
                 );
-            }
+            }*/
             // END Authorisation header
 
             $ecoleid = $request->getParam('ecoleid');
@@ -437,6 +438,7 @@ namespace ApiSchool\V1\Controller
                    message:'Database connection error'
                );
             }
+            /*
             // Check Authorisation header
             if (!$request->getHeaderLine('HTTP_AUTHORIZATION') 
                 || @strlen($request->getHeaderLine('HTTP_AUTHORIZATION')) < 1
@@ -478,7 +480,7 @@ namespace ApiSchool\V1\Controller
                     statusCode: 401, success: false,
                     message: 'Access token expired.'
                 );
-            }
+            }*/
             // END Authorisation header
 
             $ecoleid = $request->getParam('ecoleid');
