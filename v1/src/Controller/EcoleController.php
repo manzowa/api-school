@@ -1129,51 +1129,6 @@ namespace ApiSchool\V1\Controller {
                     message: 'Database connection error'
                 );
             }
-            /*
-            // Check Authorisation header
-            if (!$request->getHeaderLine('HTTP_AUTHORIZATION') 
-                || @strlen($request->getHeaderLine('HTTP_AUTHORIZATION')) < 1
-            ) {
-                (
-                    $request->getHeaderLine('HTTP_AUTHORIZATION') 
-                    ?: $response->setMessage('Access token is missing from the header')
-                );
-                (
-                    @strlen($request->getHeaderLine('HTTP_AUTHORIZATION')) < 1
-                    ?: $response->setMessage('Access token cannot be blank')
-                );
-                return $response->json(
-                    statusCode:401, success:false
-                );
-            }
-            
-            $accessToken = $request->getHeaderLine('HTTP_AUTHORIZATION');
-            $auth = new \ApiSchool\V1\Auth\Auth(token: $accessToken);
-
-            // Check Access Token
-            if (!$auth->isValid()) {
-                return $response->json(
-                    statusCode: 401,
-                    success: false,
-                    message: 'Invalid access token'
-                );
-            }
-            // Check if user has exceeded maximum login attempts
-            if ($auth->getUser()->isLocked()) {
-                return $response->json(
-                    statusCode: 401, success: false,
-                    message: 'User account is currently locked out.'
-                );
-            }
-              // Check refresh token expiration
-              if ($auth->getToken()->accessTokenExpired()) {
-                return $response->json(
-                    statusCode: 401, success: false,
-                    message: 'Access token expired.'
-                );
-            }*/
-            // END Authorisation header
-
             $page = $request->getParam('page');
             // Check Parameter Page
             if (is_null($page) || !is_numeric($page)) {
