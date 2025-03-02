@@ -64,4 +64,13 @@ class VendorMapper extends Mapper
 
         return $this;
     }
+    public function findArticlesByLimitAndOffset(int $limit, int $offset): self
+    {
+        $command = 'SELECT articles.* FROM articles LIMIT :limit  OFFSET :offset ';
+        $this->prepare($command)
+            ->bindParam(':limit', $limit, \PDO::PARAM_INT)
+            ->bindParam(':offset', $offset, \PDO::PARAM_INT);
+
+        return $this;
+    }
 }
