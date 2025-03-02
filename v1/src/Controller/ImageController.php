@@ -225,7 +225,6 @@ namespace ApiSchool\V1\Controller
 
             try 
             {
-
                 $mapper = new VendorMapper($connexionWrite);
 
                 $retrieveRow = $mapper
