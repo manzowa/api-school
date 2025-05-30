@@ -70,7 +70,7 @@ class Router
         return $relativePath;
     }
 
-    private function getBag(string $name = null): ?array 
+    private function getBag(?string $name = null): ?array 
     {
         $collects = $this->all();
         $bag = null;
